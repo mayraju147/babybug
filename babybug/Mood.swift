@@ -19,6 +19,11 @@ enum Mood: Equatable {
         }
     }
 
+    /// How tall the picture is compared with the upright poses. Curled up asleep, the bunny is lower and wider.
+    var heightScale: Double {
+        self == .sleepy ? 0.72 : 1
+    }
+
     /// What the bunny is thinking about, shown in a little bubble above its head.
     var thought: String? {
         switch self {

@@ -93,7 +93,7 @@ final class GardenScene: SKScene {
 
     private func fitBunnyToTexture() {
         guard let texture = bunny.texture else { return }
-        let height = Self.bunnyHeight
+        let height = Self.bunnyHeight * mood.heightScale
         bunny.size = CGSize(width: height * texture.size().width / texture.size().height, height: height)
     }
 
