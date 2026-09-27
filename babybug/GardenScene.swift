@@ -13,6 +13,9 @@ final class GardenScene: SKScene {
     private var heroNode: SKSpriteNode?
     private var pendingHero: Hero?
     private var isBuilt = false
+    private var mood: Mood = .content
+    private var thoughtBubble: SKNode?
+    private static let bunnyHeight: CGFloat = 200
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -33,6 +36,65 @@ final class GardenScene: SKScene {
         if let pendingHero {
             setHero(pendingHero)
         }
+        showMood(mood)
+    }
+
+    /// Changes the bunny's picture and thought bubble to match how it feels.
+    func setMood(_ newMood: Mood) {
+        guard newMood != mood else { return }
+        mood = newMood
+        if isBuilt {
+            showMood(newMood)
+        }
+    }
+
+    private func showMood(_ mood: Mood) {
+        // Use the painted pose for this mood if it's in the asset catalog, otherwise the default bunny.
+        let name = UIImage(named: mood.imageName) != nil ? mood.imageName : "Bunny"
+        bunny.texture = SKTexture(imageNamed: name)
+        fitBunnyToTexture()
+
+        thoughtBubble?.removeFromParent()
+        thoughtBubble = nil
+        guard let thought = mood.thought else { return }
+
+        let bubble = SKNode()
+        let cloud = SKShapeNode(circleOfRadius: 26)
+        cloud.fillColor = SKColor(white: 1, alpha: 0.92)
+        cloud.strokeColor = SKColor(red: 0.55, green: 0.42, blue: 0.35, alpha: 0.5)
+        cloud.lineWidth = 1.2
+        bubble.addChild(cloud)
+        for (offset, radius) in [(CGPoint(x: -24, y: -26), 7.0), (CGPoint(x: -34, y: -38), 4.0)] {
+            let dot = SKShapeNode(circleOfRadius: radius)
+            dot.fillColor = cloud.fillColor
+            dot.strokeColor = cloud.strokeColor
+            dot.lineWidth = 1
+            dot.position = offset
+            bubble.addChild(dot)
+        }
+        let label = SKLabelNode(text: thought)
+        label.fontSize = 26
+        label.verticalAlignmentMode = .center
+        bubble.addChild(label)
+
+        bubble.position = CGPoint(x: bunny.position.x + 70, y: bunny.position.y + Self.bunnyHeight + 20)
+        bubble.zPosition = 5
+        bubble.setScale(0)
+        addChild(bubble)
+        bubble.run(.sequence([
+            .scale(to: 1, duration: 0.25),
+            .repeatForever(.sequence([
+                .moveBy(x: 0, y: 6, duration: 1.2),
+                .moveBy(x: 0, y: -6, duration: 1.2),
+            ])),
+        ]))
+        thoughtBubble = bubble
+    }
+
+    private func fitBunnyToTexture() {
+        guard let texture = bunny.texture else { return }
+        let height = Self.bunnyHeight
+        bunny.size = CGSize(width: height * texture.size().width / texture.size().height, height: height)
     }
 
     /// Shows the chosen princess or prince standing beside the bunny, replacing any earlier choice.
@@ -76,8 +138,7 @@ final class GardenScene: SKScene {
     private func addBunny() {
         // Anchor at the feet so breathing stretches upwards from the ground.
         bunny.anchorPoint = CGPoint(x: 0.5, y: 0)
-        let height: CGFloat = 200
-        bunny.size = CGSize(width: height * bunny.texture!.size().width / bunny.texture!.size().height, height: height)
+        fitBunnyToTexture()
         bunny.position = CGPoint(x: 45, y: -290)
         bunny.name = "bunny"
         addChild(bunny)

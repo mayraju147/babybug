@@ -39,8 +39,15 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            scene.onFeed = { pet.feed() }
-            scene.onTickle = { pet.play() }
+            scene.onFeed = {
+                pet.feed()
+                scene.setMood(pet.mood())
+            }
+            scene.onTickle = {
+                pet.play()
+                scene.setMood(pet.mood())
+            }
+            scene.setMood(pet.mood())
             if let hero {
                 scene.setHero(hero)
             } else {
@@ -51,6 +58,7 @@ struct ContentView: View {
             // Refresh the bars every few seconds so hunger and happiness drift down in real time.
             while !Task.isCancelled {
                 pet.tick()
+                scene.setMood(pet.mood())
                 try? await Task.sleep(for: .seconds(5))
             }
         }

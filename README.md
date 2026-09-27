@@ -17,6 +17,7 @@ Painted art made with Gemini from the project prompts: the garden background and
 - Tap the bunny to tickle it (happiness goes up).
 - Drag the carrot onto the bunny to feed it (hunger goes up).
 - Both bars slowly go down over real time and are saved between launches.
+- The bunny has moods: hungry (carrot bubble), lonely (heart bubble), sleepy at bedtime (8pm to 7am, zzz bubble), happy when well cared for. Each mood uses its own picture (`BunnyHappy`, `BunnyHungry`, `BunnyLonely`, `BunnySleepy` in the asset catalog) and falls back to the default bunny until that picture is added.
 
 ## Code map
 
@@ -24,4 +25,5 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/ContentView.swift`: SwiftUI screen holding the garden and the stat bars
 - `babybug/GardenScene.swift`: SpriteKit garden, bunny, and touch handling
 - `babybug/PetStats.swift`: the bunny's needs, real-time decay and saving
+- `babybug/Mood.swift`: which mood the bunny is in
 - `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince
