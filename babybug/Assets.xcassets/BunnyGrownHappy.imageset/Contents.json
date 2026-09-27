@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "bunny_grown_happy.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
