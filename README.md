@@ -16,8 +16,10 @@ Painted art made with Gemini from the project prompts: the garden background and
 
 - Tap the bunny to tickle it (happiness goes up).
 - Drag the carrot onto the bunny to feed it (hunger goes up).
-- Both bars slowly go down over real time and are saved between launches.
-- The bunny has moods: hungry (carrot bubble), lonely (heart bubble), sleepy at bedtime (8pm to 7am, zzz bubble), happy when well cared for. Each mood uses its own picture (`BunnyHappy`, `BunnyHungry`, `BunnyLonely`, `BunnySleepy` in the asset catalog) and falls back to the default bunny until that picture is added.
+- Rub the bunny back and forth for a bubble bath (clean bar goes up).
+- Tap the bellflower cottage to put the bunny to bed: the garden turns to a starry night and the energy bar fills. Tap anywhere to wake it.
+- The bars slowly go down over real time and are saved between launches.
+- The bunny has moods: hungry (carrot bubble), lonely (heart bubble), dirty (bubbles), sleepy when tired, sleepy at bedtime (8pm to 7am, zzz bubble), happy when well cared for. Each mood uses its own picture (`BunnyHappy`, `BunnyHungry`, `BunnyLonely`, `BunnySleepy` in the asset catalog) and falls back to the default bunny until that picture is added.
 
 ## Code map
 

@@ -6,6 +6,7 @@ enum Mood: Equatable {
     case content
     case hungry
     case lonely
+    case dirty
     case sleepy
 
     /// Picture for this mood in the asset catalog. Falls back to the default bunny until the painted pose exists.
@@ -15,6 +16,7 @@ enum Mood: Equatable {
         case .content: "Bunny"
         case .hungry: "BunnyHungry"
         case .lonely: "BunnyLonely"
+        case .dirty: "Bunny"
         case .sleepy: "BunnySleepy"
         }
     }
@@ -29,6 +31,7 @@ enum Mood: Equatable {
         switch self {
         case .hungry: "🥕"
         case .lonely: "💗"
+        case .dirty: "🫧"
         case .sleepy: "💤"
         case .happy, .content: nil
         }
@@ -36,14 +39,16 @@ enum Mood: Equatable {
 }
 
 extension PetStats {
-    /// Needs come first (hungry, then lonely), then bedtime, then how well looked after the bunny is.
+    /// Asleep in bed wins; then needs (hungry, lonely, dirty); then tiredness or bedtime; then how well looked after the bunny is.
     func mood(at date: Date = Date(), calendar: Calendar = .current) -> Mood {
+        if isSleeping { return .sleepy }
         let hour = calendar.component(.hour, from: date)
         let isBedtime = hour >= 20 || hour < 7
         if hunger < 0.35 { return .hungry }
         if happiness < 0.35 { return .lonely }
-        if isBedtime { return .sleepy }
-        if hunger > 0.7 && happiness > 0.7 { return .happy }
+        if cleanliness < 0.35 { return .dirty }
+        if isBedtime || energy < 0.3 { return .sleepy }
+        if hunger > 0.7 && happiness > 0.7 && cleanliness > 0.7 { return .happy }
         return .content
     }
 }

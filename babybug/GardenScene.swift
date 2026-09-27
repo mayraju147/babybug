@@ -1,10 +1,14 @@
 import SpriteKit
 
 /// The garden: a painted background, the bunny, and a carrot to feed it.
-/// Tap the bunny to tickle it; drag the carrot onto it to feed it.
+/// Tap the bunny to tickle it, rub it for a bubble bath, drag the carrot onto it to feed it,
+/// and tap the cottage to put it to bed (tap anywhere to wake it up).
 final class GardenScene: SKScene {
     var onFeed: (() -> Void)?
     var onTickle: (() -> Void)?
+    var onBathe: (() -> Void)?
+    /// Called when the child taps the cottage, or taps anywhere while the bunny is asleep.
+    var onBedtimeTapped: (() -> Void)?
 
     private let bunny = SKSpriteNode(imageNamed: "Bunny")
     private let carrot = SKSpriteNode(imageNamed: "Carrot")
@@ -16,6 +20,16 @@ final class GardenScene: SKScene {
     private var mood: Mood = .content
     private var thoughtBubble: SKNode?
     private static let bunnyHeight: CGFloat = 200
+    /// Where the bellflower cottage's door sits in the garden painting, in scene points.
+    private static let cottageDoor = CGPoint(x: 88, y: 40)
+    /// How far a finger has to rub back and forth on the bunny to count as one wash.
+    private static let rubPerWash: CGFloat = 260
+
+    private var touchingBunny = false
+    private var rubDistance: CGFloat = 0
+    private var lastRubPoint = CGPoint.zero
+    private var isSleeping = false
+    private var night: SKNode?
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -165,24 +179,52 @@ final class GardenScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let point = touches.first?.location(in: self) else { return }
-        if carrot.contains(point) {
+        if isSleeping {
+            onBedtimeTapped?()
+        } else if carrot.contains(point) {
             draggingCarrot = true
         } else if bunny.frame.contains(point) {
-            tickle()
+            // Decide on touch end: a quick tap tickles, rubbing back and forth washes.
+            touchingBunny = true
+            rubDistance = 0
+            lastRubPoint = point
         } else if let heroNode, heroNode.frame.contains(point) {
             heroNode.run(.sequence([
                 .moveBy(x: 0, y: 18, duration: 0.15),
                 .moveBy(x: 0, y: -18, duration: 0.15),
             ]))
+        } else if hypot(point.x - Self.cottageDoor.x, point.y - Self.cottageDoor.y) < 55 {
+            onBedtimeTapped?()
         }
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard draggingCarrot, let point = touches.first?.location(in: self) else { return }
-        carrot.position = point
+        guard let point = touches.first?.location(in: self) else { return }
+        if draggingCarrot {
+            carrot.position = point
+        } else if touchingBunny {
+            let step = hypot(point.x - lastRubPoint.x, point.y - lastRubPoint.y)
+            lastRubPoint = point
+            rubDistance += step
+            if step > 4 {
+                spawnBubble(at: point)
+            }
+            if rubDistance >= Self.rubPerWash {
+                rubDistance = 0
+                wash()
+            }
+        }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if touchingBunny {
+            touchingBunny = false
+            // Barely moved: treat it as a tap.
+            if rubDistance < 20 {
+                tickle()
+            }
+            return
+        }
         guard draggingCarrot else { return }
         draggingCarrot = false
         if bunny.frame.intersects(carrot.frame) {
@@ -193,6 +235,87 @@ final class GardenScene: SKScene {
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         touchesEnded(touches, with: event)
+    }
+
+    // MARK: - Bedtime
+
+    /// Dims the garden to a starry night while the bunny sleeps, and brings the day back when it wakes.
+    func setSleeping(_ sleeping: Bool) {
+        guard sleeping != isSleeping else { return }
+        isSleeping = sleeping
+        if sleeping {
+            let overlay = makeNight()
+            overlay.alpha = 0
+            addChild(overlay)
+            overlay.run(.fadeIn(withDuration: 1.2))
+            night = overlay
+        } else if let night {
+            night.run(.sequence([.fadeOut(withDuration: 1.0), .removeFromParent()]))
+            self.night = nil
+        }
+    }
+
+    private func makeNight() -> SKNode {
+        let overlay = SKNode()
+        overlay.zPosition = 4
+
+        let shade = SKSpriteNode(color: SKColor(red: 0.10, green: 0.12, blue: 0.30, alpha: 0.55), size: CGSize(width: size.width * 2, height: size.height))
+        overlay.addChild(shade)
+
+        // Twinkling stars in the sky.
+        for _ in 0..<28 {
+            let star = SKShapeNode(circleOfRadius: CGFloat.random(in: 1...2.4))
+            star.fillColor = SKColor(red: 1, green: 0.97, blue: 0.8, alpha: 1)
+            star.strokeColor = .clear
+            star.position = CGPoint(x: .random(in: -size.width / 2...size.width / 2), y: .random(in: 60...size.height / 2))
+            let twinkle = SKAction.sequence([
+                .fadeAlpha(to: 0.3, duration: .random(in: 0.6...1.4)),
+                .fadeAlpha(to: 1, duration: .random(in: 0.6...1.4)),
+            ])
+            star.run(.repeatForever(twinkle))
+            overlay.addChild(star)
+        }
+
+        // A warm glow in the cottage window.
+        let glow = SKShapeNode(circleOfRadius: 26)
+        glow.fillColor = SKColor(red: 1, green: 0.85, blue: 0.5, alpha: 0.45)
+        glow.strokeColor = .clear
+        glow.glowWidth = 14
+        glow.position = Self.cottageDoor
+        glow.blendMode = .add
+        overlay.addChild(glow)
+        return overlay
+    }
+
+    // MARK: - Bath
+
+    private func spawnBubble(at point: CGPoint) {
+        let bubble = SKShapeNode(circleOfRadius: .random(in: 5...12))
+        bubble.fillColor = SKColor(red: 0.85, green: 0.95, blue: 1, alpha: 0.35)
+        bubble.strokeColor = SKColor(red: 0.7, green: 0.85, blue: 1, alpha: 0.9)
+        bubble.lineWidth = 1.2
+        bubble.position = CGPoint(x: point.x + .random(in: -14...14), y: point.y + .random(in: -14...14))
+        bubble.zPosition = 3
+        addChild(bubble)
+        bubble.run(.sequence([
+            .group([
+                .moveBy(x: .random(in: -20...20), y: .random(in: 50...110), duration: 1.4),
+                .fadeOut(withDuration: 1.4),
+                .scale(to: 1.4, duration: 1.4),
+            ]),
+            .removeFromParent(),
+        ]))
+    }
+
+    private func wash() {
+        onBathe?()
+        // A little shimmy, like shaking off water.
+        let shake = SKAction.sequence([
+            .moveBy(x: 6, y: 0, duration: 0.05),
+            .moveBy(x: -12, y: 0, duration: 0.1),
+            .moveBy(x: 6, y: 0, duration: 0.05),
+        ])
+        bunny.run(.repeat(shake, count: 2))
     }
 
     // MARK: - Reactions

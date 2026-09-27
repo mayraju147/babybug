@@ -47,6 +47,20 @@ struct ContentView: View {
                 pet.play()
                 scene.setMood(pet.mood())
             }
+            scene.onBathe = {
+                pet.bathe()
+                scene.setMood(pet.mood())
+            }
+            scene.onBedtimeTapped = {
+                if pet.isSleeping {
+                    pet.wake()
+                } else {
+                    pet.sleep()
+                }
+                scene.setSleeping(pet.isSleeping)
+                scene.setMood(pet.mood())
+            }
+            scene.setSleeping(pet.isSleeping)
             scene.setMood(pet.mood())
             if let hero {
                 scene.setHero(hero)
@@ -69,11 +83,13 @@ private struct StatsBar: View {
     let pet: PetStats
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 10) {
             Meter(symbol: "carrot.fill", value: pet.hunger, tint: .orange)
             Meter(symbol: "heart.fill", value: pet.happiness, tint: .pink)
+            Meter(symbol: "bubbles.and.sparkles.fill", value: pet.cleanliness, tint: .cyan)
+            Meter(symbol: "moon.stars.fill", value: pet.energy, tint: .indigo)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(.ultraThinMaterial, in: Capsule())
     }
@@ -85,11 +101,11 @@ private struct Meter: View {
     let tint: Color
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             Image(systemName: symbol).foregroundStyle(tint)
             ProgressView(value: value)
                 .tint(tint)
-                .frame(width: 90)
+                .frame(width: 44)
         }
     }
 }
