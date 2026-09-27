@@ -19,7 +19,7 @@ final class GardenScene: SKScene {
     private var isBuilt = false
     private var mood: Mood = .content
     private var thoughtBubble: SKNode?
-    private static let bunnyHeight: CGFloat = 200
+    private var stage: Stage = .baby
     /// Where the bellflower cottage's door sits in the garden painting, in scene points.
     private static let cottageDoor = CGPoint(x: 88, y: 40)
     /// How far a finger has to rub back and forth on the bunny to count as one wash.
@@ -53,6 +53,17 @@ final class GardenScene: SKScene {
         showMood(mood)
     }
 
+    /// Makes the bunny baby, young or grown. With `celebrate`, it pops up bigger with a shower of sparkles.
+    func setStage(_ newStage: Stage, celebrate: Bool = false) {
+        guard newStage != stage else { return }
+        stage = newStage
+        guard isBuilt else { return }
+        showMood(mood)
+        if celebrate {
+            celebrateGrowing()
+        }
+    }
+
     /// Changes the bunny's picture and thought bubble to match how it feels.
     func setMood(_ newMood: Mood) {
         guard newMood != mood else { return }
@@ -63,9 +74,7 @@ final class GardenScene: SKScene {
     }
 
     private func showMood(_ mood: Mood) {
-        // Use the painted pose for this mood if it's in the asset catalog, otherwise the default bunny.
-        let name = UIImage(named: mood.imageName) != nil ? mood.imageName : "Bunny"
-        bunny.texture = SKTexture(imageNamed: name)
+        bunny.texture = SKTexture(imageNamed: pictureName(for: mood))
         fitBunnyToTexture()
 
         thoughtBubble?.removeFromParent()
@@ -91,7 +100,7 @@ final class GardenScene: SKScene {
         label.verticalAlignmentMode = .center
         bubble.addChild(label)
 
-        bubble.position = CGPoint(x: bunny.position.x + 70, y: bunny.position.y + Self.bunnyHeight + 20)
+        bubble.position = CGPoint(x: bunny.position.x + 70, y: bunny.position.y + stage.bunnyHeight + 20)
         bubble.zPosition = 5
         bubble.setScale(0)
         addChild(bubble)
@@ -105,9 +114,20 @@ final class GardenScene: SKScene {
         thoughtBubble = bubble
     }
 
+    /// The best painted picture we have for this stage and mood. Until the older bunny's pictures are added,
+    /// it falls back to that stage's main pose, then to the baby's pose for the mood.
+    private func pictureName(for mood: Mood) -> String {
+        var candidates = [stage.imagePrefix + mood.imageSuffix]
+        if stage != .baby {
+            candidates.append(stage.imagePrefix)
+        }
+        candidates.append("Bunny" + mood.imageSuffix)
+        return candidates.first { UIImage(named: $0) != nil } ?? "Bunny"
+    }
+
     private func fitBunnyToTexture() {
         guard let texture = bunny.texture else { return }
-        let height = Self.bunnyHeight * mood.heightScale
+        let height = stage.bunnyHeight * mood.heightScale
         bunny.size = CGSize(width: height * texture.size().width / texture.size().height, height: height)
     }
 
@@ -328,6 +348,69 @@ final class GardenScene: SKScene {
             .rotate(toAngle: 0, duration: 0.08),
         ])
         bunny.run(.repeat(wiggle, count: 2))
+    }
+
+    // MARK: - Growing up
+
+    private func celebrateGrowing() {
+        bunny.run(.sequence([
+            .scale(to: 1.25, duration: 0.25),
+            .scale(to: 0.95, duration: 0.15),
+            .scale(to: 1.0, duration: 0.15),
+        ]))
+
+        let center = CGPoint(x: bunny.position.x, y: bunny.position.y + stage.bunnyHeight / 2)
+        let colors: [SKColor] = [
+            SKColor(red: 0.96, green: 0.52, blue: 0.72, alpha: 1),
+            SKColor(red: 0.80, green: 0.72, blue: 0.98, alpha: 1),
+            SKColor(red: 0.68, green: 0.86, blue: 0.99, alpha: 1),
+            SKColor(red: 1.0, green: 0.88, blue: 0.45, alpha: 1),
+            .white,
+        ]
+        for i in 0..<36 {
+            let sparkle = SKLabelNode(text: i.isMultiple(of: 3) ? "♥" : "✦")
+            sparkle.fontSize = .random(in: 14...28)
+            sparkle.fontColor = colors[i % colors.count]
+            sparkle.verticalAlignmentMode = .center
+            sparkle.position = center
+            sparkle.zPosition = 6
+            addChild(sparkle)
+            let angle = CGFloat.random(in: 0..<(2 * .pi))
+            let distance = CGFloat.random(in: 90...190)
+            sparkle.run(.sequence([
+                .group([
+                    .moveBy(x: cos(angle) * distance, y: sin(angle) * distance, duration: 1.1),
+                    .rotate(byAngle: .random(in: -2...2), duration: 1.1),
+                    .sequence([.wait(forDuration: 0.6), .fadeOut(withDuration: 0.5)]),
+                ]),
+                .removeFromParent(),
+            ]))
+        }
+
+        // Words for the grown-up reading along; the sparkles do the job for little ones.
+        _ = AppFont.isLoaded
+        let banner = SKLabelNode(fontNamed: AppFont.name)
+        banner.text = "Your bunny grew!"
+        banner.fontSize = 34
+        banner.fontColor = SKColor(red: 0.19, green: 0.29, blue: 0.29, alpha: 1)
+        banner.position = CGPoint(x: 0, y: size.height * 0.18)
+        banner.zPosition = 7
+        banner.setScale(0)
+        let glow = SKLabelNode(fontNamed: AppFont.name)
+        glow.text = banner.text
+        glow.fontSize = banner.fontSize
+        glow.fontColor = .white
+        glow.position = CGPoint(x: 2, y: -2)
+        glow.zPosition = -1
+        banner.addChild(glow)
+        addChild(banner)
+        banner.run(.sequence([
+            .scale(to: 1.1, duration: 0.25),
+            .scale(to: 1.0, duration: 0.1),
+            .wait(forDuration: 2.2),
+            .fadeOut(withDuration: 0.6),
+            .removeFromParent(),
+        ]))
     }
 
     private func feed() {

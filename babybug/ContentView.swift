@@ -6,6 +6,8 @@ struct ContentView: View {
     @State private var scene = GardenScene(size: CGSize(width: 390, height: 844))
     @AppStorage("hero") private var heroChoice = ""
     @State private var showingPicker = false
+    /// The stage the garden is showing, so a new one can be celebrated.
+    @State private var shownStage: Stage = .baby
 
     private var hero: Hero? { Hero(rawValue: heroChoice) }
 
@@ -15,6 +17,11 @@ struct ContentView: View {
                 .ignoresSafeArea()
             StatsBar(pet: pet)
                 .padding(.top, 8)
+                .onLongPressGesture(minimumDuration: 2) {
+                    // Hidden helper for testing: hold the bars for 2 seconds to grow the bunny now.
+                    pet.growForTesting()
+                    updateStage()
+                }
         }
         .overlay(alignment: .topTrailing) {
             // Small crown button so a grown-up can switch between princess and prince later.
@@ -42,14 +49,17 @@ struct ContentView: View {
             scene.onFeed = {
                 pet.feed()
                 scene.setMood(pet.mood())
+                updateStage()
             }
             scene.onTickle = {
                 pet.play()
                 scene.setMood(pet.mood())
+                updateStage()
             }
             scene.onBathe = {
                 pet.bathe()
                 scene.setMood(pet.mood())
+                updateStage()
             }
             scene.onBedtimeTapped = {
                 if pet.isSleeping {
@@ -62,6 +72,8 @@ struct ContentView: View {
             }
             scene.setSleeping(pet.isSleeping)
             scene.setMood(pet.mood())
+            scene.setStage(pet.stage)
+            shownStage = pet.stage
             if let hero {
                 scene.setHero(hero)
             } else {
@@ -76,6 +88,12 @@ struct ContentView: View {
                 try? await Task.sleep(for: .seconds(5))
             }
         }
+    }
+
+    private func updateStage() {
+        guard pet.stage != shownStage else { return }
+        shownStage = pet.stage
+        scene.setStage(pet.stage, celebrate: true)
     }
 }
 

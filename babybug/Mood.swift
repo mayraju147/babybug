@@ -9,15 +9,14 @@ enum Mood: Equatable {
     case dirty
     case sleepy
 
-    /// Picture for this mood in the asset catalog. Falls back to the default bunny until the painted pose exists.
-    var imageName: String {
+    /// End of this mood's picture name in the asset catalog, after the stage's prefix ("BunnyHappy", "BunnyYoungHappy").
+    var imageSuffix: String {
         switch self {
-        case .happy: "BunnyHappy"
-        case .content: "Bunny"
-        case .hungry: "BunnyHungry"
-        case .lonely: "BunnyLonely"
-        case .dirty: "Bunny"
-        case .sleepy: "BunnySleepy"
+        case .happy: "Happy"
+        case .content, .dirty: ""
+        case .hungry: "Hungry"
+        case .lonely: "Lonely"
+        case .sleepy: "Sleepy"
         }
     }
 

@@ -10,6 +10,12 @@ final class PetStats: Codable {
     /// True while the bunny is tucked up in bed after the child tapped the cottage.
     var isSleeping = false
     var lastUpdated = Date()
+    /// How many different days the child has looked after the bunny. This is what makes it grow.
+    var careDays = 0
+    /// The last day that counted towards `careDays`, as "year-month-day" in local time, so each day only counts once.
+    private var lastCareDay: String?
+
+    var stage: Stage { Stage.forCareDays(careDays) }
 
     /// How much each need drops per hour while you're away. Gentle, so the bunny never "dies".
     private static let hungerPerHour = 0.08
@@ -22,18 +28,21 @@ final class PetStats: Codable {
 
     func feed() {
         tick()
+        noteCare()
         hunger = min(1, hunger + 0.25)
         save()
     }
 
     func play() {
         tick()
+        noteCare()
         happiness = min(1, happiness + 0.1)
         save()
     }
 
     func bathe() {
         tick()
+        noteCare()
         cleanliness = min(1, cleanliness + 0.25)
         save()
     }
@@ -47,6 +56,22 @@ final class PetStats: Codable {
     func wake() {
         tick()
         isSleeping = false
+        save()
+    }
+
+    /// Counts today as a day of care, once per day.
+    private func noteCare(now: Date = Date()) {
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: now)
+        let today = "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
+        guard today != lastCareDay else { return }
+        lastCareDay = today
+        careDays += 1
+    }
+
+    /// Jumps to the next stage straight away, for testing growth without waiting days.
+    func growForTesting() {
+        guard let next = Stage(rawValue: stage.rawValue + 1) else { return }
+        careDays = next.careDaysNeeded
         save()
     }
 
@@ -82,7 +107,7 @@ final class PetStats: Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case hunger, happiness, cleanliness, energy, isSleeping, lastUpdated
+        case hunger, happiness, cleanliness, energy, isSleeping, lastUpdated, careDays, lastCareDay
     }
 
     init() {}
@@ -96,6 +121,8 @@ final class PetStats: Codable {
         energy = try container.decodeIfPresent(Double.self, forKey: .energy) ?? 1
         isSleeping = try container.decodeIfPresent(Bool.self, forKey: .isSleeping) ?? false
         lastUpdated = try container.decode(Date.self, forKey: .lastUpdated)
+        careDays = try container.decodeIfPresent(Int.self, forKey: .careDays) ?? 0
+        lastCareDay = try container.decodeIfPresent(String.self, forKey: .lastCareDay)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -106,5 +133,7 @@ final class PetStats: Codable {
         try container.encode(energy, forKey: .energy)
         try container.encode(isSleeping, forKey: .isSleeping)
         try container.encode(lastUpdated, forKey: .lastUpdated)
+        try container.encode(careDays, forKey: .careDays)
+        try container.encodeIfPresent(lastCareDay, forKey: .lastCareDay)
     }
 }

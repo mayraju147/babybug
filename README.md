@@ -21,6 +21,8 @@ Painted art made with Gemini from the project prompts: the garden background and
 - The bars slowly go down over real time and are saved between launches.
 - The bunny has moods: hungry (carrot bubble), lonely (heart bubble), dirty (bubbles), sleepy when tired, sleepy at bedtime (8pm to 7am, zzz bubble), happy when well cared for. Each mood uses its own picture (`BunnyHappy`, `BunnyHungry`, `BunnyLonely`, `BunnySleepy` in the asset catalog) and falls back to the default bunny until that picture is added.
 
+- The bunny grows up: baby, then young after 3 days of care, then grown after 7 (a day counts once the child feeds, tickles or bathes it). Growing up plays a sparkle shower and "Your bunny grew!". For testing, press and hold the bars at the top for 2 seconds to grow it straight away. Pictures are `BunnyYoung…` and `BunnyGrown…` (for example `BunnyYoungHappy`); until they're added, the baby's pictures are shown bigger.
+
 ## Code map
 
 - `babybug/BabybugApp.swift`: app entry point
@@ -28,5 +30,6 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/GardenScene.swift`: SpriteKit garden, bunny, and touch handling
 - `babybug/PetStats.swift`: the bunny's needs, real-time decay and saving
 - `babybug/Mood.swift`: which mood the bunny is in
+- `babybug/Stage.swift`: baby, young and grown, and when each one starts
 - `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince
 - `babybug/AppFont.swift`, `babybug/Fonts/`: the Yuji Mai font (by Kinuta Font Factory, free under the SIL Open Font License 1.1, from Google Fonts)
