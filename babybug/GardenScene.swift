@@ -9,6 +9,8 @@ final class GardenScene: SKScene {
     var onBathe: (() -> Void)?
     /// Called when the child taps the cottage, or taps anywhere while the bunny is asleep.
     var onBedtimeTapped: (() -> Void)?
+    /// Called when the child taps the bunny's name tag, to rename it.
+    var onNameTapped: (() -> Void)?
 
     private let bunny = SKSpriteNode(imageNamed: "Bunny")
     private var carrot = SKNode()
@@ -17,6 +19,8 @@ final class GardenScene: SKScene {
     private var draggingCarrot = false
     private var decorationNodes: [SKNode] = []
     private var decorations: [ShopItem] = []
+    private var bunnyName = ""
+    private var nameTag: SKNode?
     private var heroNode: SKSpriteNode?
     private var pendingHero: Hero?
     private var isBuilt = false
@@ -52,6 +56,7 @@ final class GardenScene: SKScene {
         addBunny()
         addCarrot()
         showDecorations()
+        showNameTag()
         if let pendingHero {
             setHero(pendingHero)
         }
@@ -224,6 +229,43 @@ final class GardenScene: SKScene {
         return label
     }
 
+    // MARK: - Name tag
+
+    /// Shows the bunny's name on a little pill under its feet.
+    func setBunnyName(_ name: String) {
+        guard name != bunnyName else { return }
+        bunnyName = name
+        if isBuilt {
+            showNameTag()
+        }
+    }
+
+    private func showNameTag() {
+        nameTag?.removeFromParent()
+        nameTag = nil
+        guard !bunnyName.isEmpty else { return }
+
+        let label = SKLabelNode(fontNamed: AppFont.name)
+        label.text = bunnyName
+        label.fontSize = 20
+        label.fontColor = SKColor(red: 0.19, green: 0.29, blue: 0.29, alpha: 1)
+        label.verticalAlignmentMode = .center
+        label.zPosition = 1
+
+        let width = label.frame.width + 28
+        let pill = SKShapeNode(rectOf: CGSize(width: width, height: 30), cornerRadius: 15)
+        pill.fillColor = SKColor(white: 1, alpha: 0.92)
+        pill.strokeColor = SKColor(red: 0.96, green: 0.52, blue: 0.72, alpha: 0.9)
+        pill.lineWidth = 2
+        pill.addChild(label)
+
+        pill.position = CGPoint(x: bunny.position.x, y: bunny.position.y - 14)
+        pill.zPosition = 2
+        pill.name = "nameTag"
+        addChild(pill)
+        nameTag = pill
+    }
+
     // MARK: - Shop things
 
     /// Puts a different treat out in the garden for the child to drag to the bunny.
@@ -290,6 +332,8 @@ final class GardenScene: SKScene {
         guard let point = touches.first?.location(in: self) else { return }
         if isSleeping {
             onBedtimeTapped?()
+        } else if let nameTag, nameTag.calculateAccumulatedFrame().insetBy(dx: -6, dy: -6).contains(point) {
+            onNameTapped?()
         } else if carrot.calculateAccumulatedFrame().insetBy(dx: -12, dy: -12).contains(point) {
             draggingCarrot = true
         } else if bunny.frame.contains(point) {
@@ -478,7 +522,7 @@ final class GardenScene: SKScene {
 
         // Words for the grown-up reading along; the sparkles do the job for little ones.
         let banner = SKLabelNode(fontNamed: AppFont.name)
-        banner.text = "Your bunny grew!"
+        banner.text = bunnyName.isEmpty ? "Your bunny grew!" : "\(bunnyName) grew!"
         banner.fontSize = 34
         banner.fontColor = SKColor(red: 0.19, green: 0.29, blue: 0.29, alpha: 1)
         banner.position = CGPoint(x: 0, y: size.height * 0.18)

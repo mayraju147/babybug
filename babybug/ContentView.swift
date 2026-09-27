@@ -8,6 +8,8 @@ struct ContentView: View {
     @State private var showingShop = false
     @State private var scene = GardenScene(size: CGSize(width: 390, height: 844))
     @AppStorage("hero") private var heroChoice = ""
+    @AppStorage("bunnyName") private var bunnyName = ""
+    @State private var showingNamer = false
     @State private var showingPicker = false
     /// The stage the garden is showing, so a new one can be celebrated.
     @State private var shownStage: Stage = .baby
@@ -18,6 +20,13 @@ struct ContentView: View {
         ZStack(alignment: .top) {
             SpriteView(scene: scene)
                 .ignoresSafeArea()
+                .fullScreenCover(isPresented: $showingNamer) {
+                    BunnyNamer(startingName: bunnyName) { name in
+                        bunnyName = name
+                        scene.setBunnyName(name)
+                        showingNamer = false
+                    }
+                }
             // A few Y2K twinkles over the garden, soft enough not to hide the painting.
             SparkleField()
                 .opacity(0.6)
@@ -82,7 +91,12 @@ struct ContentView: View {
             .padding(.leading, 12)
             .padding(.top, 66)
         }
-        .fullScreenCover(isPresented: $showingPicker) {
+        .fullScreenCover(isPresented: $showingPicker, onDismiss: {
+            // First time through: name the bunny straight after choosing the princess or prince.
+            if bunnyName.isEmpty {
+                showingNamer = true
+            }
+        }) {
             HeroPicker { chosen in
                 heroChoice = chosen.rawValue
                 scene.setHero(chosen)
@@ -124,6 +138,10 @@ struct ContentView: View {
                 scene.setSleeping(pet.isSleeping)
                 scene.setMood(pet.mood())
             }
+            scene.onNameTapped = {
+                showingNamer = true
+            }
+            scene.setBunnyName(bunnyName)
             scene.setSleeping(pet.isSleeping)
             scene.setMood(pet.mood())
             scene.setStage(pet.stage)
@@ -132,6 +150,10 @@ struct ContentView: View {
             shownStage = pet.stage
             if let hero {
                 scene.setHero(hero)
+                // Players from before names existed get asked once.
+                if bunnyName.isEmpty {
+                    showingNamer = true
+                }
             } else {
                 showingPicker = true
             }

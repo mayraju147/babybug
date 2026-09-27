@@ -10,6 +10,7 @@ A cosy virtual pet game for young kids on iPhone and iPad. A little princess or 
 
 ## What's here so far
 
+- After picking the hero, the child names the bunny (type it, tap a ready-made name, or roll the dice). The name shows on a tag under the bunny; tap the tag to rename.
 - On first launch, pick the princess or the prince on a Y2K-style sticker page (the crown button switches later).
 
 Painted art made with Gemini from the project prompts: the garden background and the bunny. The princess and prince are from Gemini too; only the carrot is still a placeholder.
@@ -39,6 +40,7 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/Shop.swift`, `babybug/ShopView.swift`: shop items, dewdrops and the shop screen
 - `babybug/DewdropStore.swift`, `babybug/MoreDewdropsView.swift`: buying dewdrop packs with real money, behind the grown-up check
 - `babybug/Y2KStyle.swift`: shared Y2K look (stripes, sparkles, holographic rims)
+- `babybug/BunnyNamer.swift`: the naming screen
 - `babybug/Stage.swift`: baby, young and grown, and when each one starts
 - `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince
 - `babybug/AppFont.swift`, `babybug/Fonts/`, `babybug-Info.plist` (lists the font so iOS loads it): the Yuji Mai font (by Kinuta Font Factory, free under the SIL Open Font License 1.1, from Google Fonts)
