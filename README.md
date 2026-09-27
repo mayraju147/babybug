@@ -10,7 +10,9 @@ A cosy virtual pet game for young kids on iPhone and iPad. A little princess or 
 
 ## What's here so far
 
-Painted art made with Gemini from the project prompts: the garden background and the bunny. The carrot is still a placeholder.
+- On first launch, pick the princess or the prince (the crown button switches later).
+
+Painted art made with Gemini from the project prompts: the garden background and the bunny. The carrot, princess and prince are still placeholders.
 
 - Tap the bunny to tickle it (happiness goes up).
 - Drag the carrot onto the bunny to feed it (hunger goes up).
@@ -22,3 +24,4 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/ContentView.swift`: SwiftUI screen holding the garden and the stat bars
 - `babybug/GardenScene.swift`: SpriteKit garden, bunny, and touch handling
 - `babybug/PetStats.swift`: the bunny's needs, real-time decay and saving
+- `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince

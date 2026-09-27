@@ -10,6 +10,9 @@ final class GardenScene: SKScene {
     private let carrot = SKSpriteNode(imageNamed: "Carrot")
     private var carrotHome = CGPoint.zero
     private var draggingCarrot = false
+    private var heroNode: SKSpriteNode?
+    private var pendingHero: Hero?
+    private var isBuilt = false
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -22,10 +25,41 @@ final class GardenScene: SKScene {
     }
 
     override func didMove(to view: SKView) {
-        guard children.isEmpty else { return }
+        guard !isBuilt else { return }
+        isBuilt = true
         addBackground()
         addBunny()
         addCarrot()
+        if let pendingHero {
+            setHero(pendingHero)
+        }
+    }
+
+    /// Shows the chosen princess or prince standing beside the bunny, replacing any earlier choice.
+    func setHero(_ hero: Hero) {
+        guard isBuilt else {
+            pendingHero = hero
+            return
+        }
+        heroNode?.removeFromParent()
+        let node = SKSpriteNode(imageNamed: hero.imageName)
+        node.anchorPoint = CGPoint(x: 0.5, y: 0)
+        let height: CGFloat = 300
+        let texture = node.texture!.size()
+        node.size = CGSize(width: height * texture.width / texture.height, height: height)
+        node.position = CGPoint(x: -120, y: -300)
+        node.zPosition = -1
+        node.name = "hero"
+        addChild(node)
+        heroNode = node
+
+        // Gentle idle sway.
+        let sway = SKAction.sequence([
+            .rotate(toAngle: 0.025, duration: 1.8),
+            .rotate(toAngle: -0.025, duration: 1.8),
+        ])
+        sway.timingMode = .easeInEaseOut
+        node.run(.repeatForever(sway))
     }
 
     // MARK: - Building the scene
@@ -44,7 +78,7 @@ final class GardenScene: SKScene {
         bunny.anchorPoint = CGPoint(x: 0.5, y: 0)
         let height: CGFloat = 250
         bunny.size = CGSize(width: height * bunny.texture!.size().width / bunny.texture!.size().height, height: height)
-        bunny.position = CGPoint(x: 0, y: -290)
+        bunny.position = CGPoint(x: 45, y: -290)
         bunny.name = "bunny"
         addChild(bunny)
 
@@ -60,7 +94,7 @@ final class GardenScene: SKScene {
     private func addCarrot() {
         carrot.size = CGSize(width: 40, height: 76)
         carrot.name = "carrot"
-        carrotHome = CGPoint(x: 135, y: -300)
+        carrotHome = CGPoint(x: 125, y: -345)
         carrot.position = carrotHome
         carrot.zPosition = 1
         addChild(carrot)
@@ -74,6 +108,11 @@ final class GardenScene: SKScene {
             draggingCarrot = true
         } else if bunny.frame.contains(point) {
             tickle()
+        } else if let heroNode, heroNode.frame.contains(point) {
+            heroNode.run(.sequence([
+                .moveBy(x: 0, y: 18, duration: 0.15),
+                .moveBy(x: 0, y: -18, duration: 0.15),
+            ]))
         }
     }
 

@@ -4,6 +4,10 @@ import SwiftUI
 struct ContentView: View {
     @State private var pet = PetStats.load()
     @State private var scene = GardenScene(size: CGSize(width: 390, height: 844))
+    @AppStorage("hero") private var heroChoice = ""
+    @State private var showingPicker = false
+
+    private var hero: Hero? { Hero(rawValue: heroChoice) }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -12,9 +16,36 @@ struct ContentView: View {
             StatsBar(pet: pet)
                 .padding(.top, 8)
         }
+        .overlay(alignment: .topTrailing) {
+            // Small crown button so a grown-up can switch between princess and prince later.
+            Button {
+                showingPicker = true
+            } label: {
+                Image(systemName: "crown.fill")
+                    .font(.title3)
+                    .foregroundStyle(.yellow)
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .padding(.trailing, 12)
+            .padding(.top, 60)
+            .accessibilityLabel("Change princess or prince")
+        }
+        .fullScreenCover(isPresented: $showingPicker) {
+            HeroPicker { chosen in
+                heroChoice = chosen.rawValue
+                scene.setHero(chosen)
+                showingPicker = false
+            }
+        }
         .onAppear {
             scene.onFeed = { pet.feed() }
             scene.onTickle = { pet.play() }
+            if let hero {
+                scene.setHero(hero)
+            } else {
+                showingPicker = true
+            }
         }
         .task {
             // Refresh the bars every few seconds so hunger and happiness drift down in real time.
