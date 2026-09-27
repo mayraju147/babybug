@@ -10,7 +10,7 @@ A cosy virtual pet game for young kids on iPhone and iPad. A little princess or 
 
 ## What's here so far
 
-A placeholder garden made from simple shapes, which will be swapped for the painted art later.
+A painted garden with the bunny (made with Gemini from the project prompts). The garden and carrot are placeholders until their AI versions arrive.
 
 - Tap the bunny to tickle it (happiness goes up).
 - Drag the carrot onto the bunny to feed it (hunger goes up).
