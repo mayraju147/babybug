@@ -76,7 +76,7 @@ final class GardenScene: SKScene {
     private func addBunny() {
         // Anchor at the feet so breathing stretches upwards from the ground.
         bunny.anchorPoint = CGPoint(x: 0.5, y: 0)
-        let height: CGFloat = 250
+        let height: CGFloat = 200
         bunny.size = CGSize(width: height * bunny.texture!.size().width / bunny.texture!.size().height, height: height)
         bunny.position = CGPoint(x: 45, y: -290)
         bunny.name = "bunny"
