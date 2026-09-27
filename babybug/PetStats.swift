@@ -26,10 +26,12 @@ final class PetStats: Codable {
     private static let restPerHour = 120.0
     private static let saveKey = "babybug.petStats"
 
-    func feed() {
+    func feed(_ treat: ShopItem = .carrot) {
         tick()
         noteCare()
-        hunger = min(1, hunger + 0.25)
+        let (food, joy) = treat.nourishment
+        hunger = min(1, hunger + food)
+        happiness = min(1, happiness + joy)
         save()
     }
 

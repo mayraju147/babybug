@@ -1,7 +1,7 @@
 import SpriteKit
 
-/// The garden: a painted background, the bunny, and a carrot to feed it.
-/// Tap the bunny to tickle it, rub it for a bubble bath, drag the carrot onto it to feed it,
+/// The garden: a painted background, the bunny, a treat to feed it, and any decorations bought in the shop.
+/// Tap the bunny to tickle it, rub it for a bubble bath, drag the treat onto it to feed it,
 /// and tap the cottage to put it to bed (tap anywhere to wake it up).
 final class GardenScene: SKScene {
     var onFeed: (() -> Void)?
@@ -11,9 +11,12 @@ final class GardenScene: SKScene {
     var onBedtimeTapped: (() -> Void)?
 
     private let bunny = SKSpriteNode(imageNamed: "Bunny")
-    private let carrot = SKSpriteNode(imageNamed: "Carrot")
-    private var carrotHome = CGPoint.zero
+    private var carrot = SKNode()
+    private var treat: ShopItem = .carrot
+    private let carrotHome = CGPoint(x: 125, y: -345)
     private var draggingCarrot = false
+    private var decorationNodes: [SKNode] = []
+    private var decorations: [ShopItem] = []
     private var heroNode: SKSpriteNode?
     private var pendingHero: Hero?
     private var isBuilt = false
@@ -48,6 +51,7 @@ final class GardenScene: SKScene {
         addBackground()
         addBunny()
         addCarrot()
+        showDecorations()
         if let pendingHero {
             setHero(pendingHero)
         }
@@ -198,12 +202,85 @@ final class GardenScene: SKScene {
     }
 
     private func addCarrot() {
-        carrot.size = CGSize(width: 40, height: 76)
+        carrot.removeFromParent()
+        carrot = Self.itemNode(treat, height: 76)
         carrot.name = "carrot"
-        carrotHome = CGPoint(x: 125, y: -345)
         carrot.position = carrotHome
         carrot.zPosition = 1
         addChild(carrot)
+    }
+
+    /// The painted picture for a shop item, or its emoji until the picture is added.
+    private static func itemNode(_ item: ShopItem, height: CGFloat) -> SKNode {
+        if let image = UIImage(named: item.imageName) {
+            let sprite = SKSpriteNode(texture: SKTexture(image: image))
+            sprite.size = CGSize(width: height * image.size.width / image.size.height, height: height)
+            return sprite
+        }
+        let label = SKLabelNode(text: item.emoji)
+        label.fontSize = height * 0.75
+        label.verticalAlignmentMode = .center
+        return label
+    }
+
+    // MARK: - Shop things
+
+    /// Puts a different treat out in the garden for the child to drag to the bunny.
+    func setTreat(_ item: ShopItem) {
+        guard item != treat else { return }
+        treat = item
+        if isBuilt {
+            addCarrot()
+        }
+    }
+
+    /// Shows the bought decorations at their spots in the garden.
+    func setDecorations(_ items: [ShopItem]) {
+        guard items != decorations else { return }
+        let isNew = Set(items).subtracting(decorations)
+        decorations = items
+        guard isBuilt else { return }
+        showDecorations(popping: isNew)
+    }
+
+    private func showDecorations(popping new: Set<ShopItem> = []) {
+        decorationNodes.forEach { $0.removeFromParent() }
+        decorationNodes = decorations.map { item in
+            let node = Self.itemNode(item, height: item.gardenHeight)
+            node.position = CGPoint(x: item.gardenSpot.x, y: item.gardenSpot.y + item.gardenHeight / 2)
+            node.zPosition = 0.5
+            addChild(node)
+            if new.contains(item) {
+                node.setScale(0)
+                node.run(.sequence([.scale(to: 1.15, duration: 0.2), .scale(to: 1, duration: 0.1)]))
+            }
+            return node
+        }
+    }
+
+    /// A little dewdrop floats up from the bunny when looking after it earns one.
+    func showDewdropEarned() {
+        let drop: SKNode
+        if let image = UIImage(named: "Dewdrop") {
+            let sprite = SKSpriteNode(texture: SKTexture(image: image))
+            sprite.size = CGSize(width: 30 * image.size.width / image.size.height, height: 30)
+            drop = sprite
+        } else {
+            let label = SKLabelNode(text: "💧")
+            label.fontSize = 26
+            label.verticalAlignmentMode = .center
+            drop = label
+        }
+        drop.position = CGPoint(x: bunny.position.x - 40, y: bunny.position.y + stage.bunnyHeight * 0.8)
+        drop.zPosition = 6
+        addChild(drop)
+        drop.run(.sequence([
+            .group([
+                .moveBy(x: 0, y: 70, duration: 1.0),
+                .sequence([.wait(forDuration: 0.5), .fadeOut(withDuration: 0.5)]),
+            ]),
+            .removeFromParent(),
+        ]))
     }
 
     // MARK: - Touch
@@ -212,7 +289,7 @@ final class GardenScene: SKScene {
         guard let point = touches.first?.location(in: self) else { return }
         if isSleeping {
             onBedtimeTapped?()
-        } else if carrot.contains(point) {
+        } else if carrot.calculateAccumulatedFrame().insetBy(dx: -12, dy: -12).contains(point) {
             draggingCarrot = true
         } else if bunny.frame.contains(point) {
             // Decide on touch end: a quick tap tickles, rubbing back and forth washes.
@@ -258,7 +335,7 @@ final class GardenScene: SKScene {
         }
         guard draggingCarrot else { return }
         draggingCarrot = false
-        if bunny.frame.intersects(carrot.frame) {
+        if bunny.frame.intersects(carrot.calculateAccumulatedFrame()) {
             feed()
         }
         carrot.run(.move(to: carrotHome, duration: 0.3))

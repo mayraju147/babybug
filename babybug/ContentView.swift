@@ -3,6 +3,8 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var pet = PetStats.load()
+    @State private var inventory = Inventory.load()
+    @State private var showingShop = false
     @State private var scene = GardenScene(size: CGSize(width: 390, height: 844))
     @AppStorage("hero") private var heroChoice = ""
     @State private var showingPicker = false
@@ -18,8 +20,9 @@ struct ContentView: View {
             StatsBar(pet: pet)
                 .padding(.top, 8)
                 .onLongPressGesture(minimumDuration: 2) {
-                    // Hidden helper for testing: hold the bars for 2 seconds to grow the bunny now.
+                    // Hidden helper for testing: hold the bars for 2 seconds to grow the bunny and get 50 dewdrops.
                     pet.growForTesting()
+                    inventory.earn(50)
                     updateStage()
                 }
         }
@@ -38,6 +41,34 @@ struct ContentView: View {
             .padding(.top, 60)
             .accessibilityLabel("Change princess or prince")
         }
+        .overlay(alignment: .topLeading) {
+            VStack(alignment: .leading, spacing: 10) {
+                DewdropCounter(count: inventory.dewdrops)
+                // Big, easy-to-hit shop button for small fingers.
+                Button {
+                    showingShop = true
+                } label: {
+                    Image(systemName: "basket.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(Y2K.bubblegum)
+                        .frame(width: 56, height: 56)
+                        .background(Circle().fill(.white.opacity(0.9)))
+                        .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 3))
+                        .shadow(color: Y2K.bubblegum.opacity(0.35), radius: 6, y: 3)
+                }
+                .accessibilityLabel("Dewdrop shop")
+                .fullScreenCover(isPresented: $showingShop, onDismiss: {
+                    scene.setTreat(inventory.treat)
+                    scene.setDecorations(inventory.decorations)
+                }) {
+                    ShopView(inventory: inventory) {
+                        showingShop = false
+                    }
+                }
+            }
+            .padding(.leading, 12)
+            .padding(.top, 66)
+        }
         .fullScreenCover(isPresented: $showingPicker) {
             HeroPicker { chosen in
                 heroChoice = chosen.rawValue
@@ -47,17 +78,23 @@ struct ContentView: View {
         }
         .onAppear {
             scene.onFeed = {
-                pet.feed()
+                let needed = pet.hunger < 0.98
+                pet.feed(inventory.treat)
+                if needed { earnDewdrop() }
                 scene.setMood(pet.mood())
                 updateStage()
             }
             scene.onTickle = {
+                let needed = pet.happiness < 0.98
                 pet.play()
+                if needed { earnDewdrop() }
                 scene.setMood(pet.mood())
                 updateStage()
             }
             scene.onBathe = {
+                let needed = pet.cleanliness < 0.98
                 pet.bathe()
+                if needed { earnDewdrop() }
                 scene.setMood(pet.mood())
                 updateStage()
             }
@@ -73,6 +110,8 @@ struct ContentView: View {
             scene.setSleeping(pet.isSleeping)
             scene.setMood(pet.mood())
             scene.setStage(pet.stage)
+            scene.setTreat(inventory.treat)
+            scene.setDecorations(inventory.decorations)
             shownStage = pet.stage
             if let hero {
                 scene.setHero(hero)
@@ -88,6 +127,12 @@ struct ContentView: View {
                 try? await Task.sleep(for: .seconds(5))
             }
         }
+    }
+
+    /// Looking after the bunny when it actually needs it earns a dewdrop.
+    private func earnDewdrop() {
+        inventory.earn()
+        scene.showDewdropEarned()
     }
 
     private func updateStage() {
