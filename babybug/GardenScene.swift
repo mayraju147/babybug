@@ -32,7 +32,9 @@ final class GardenScene: SKScene {
 
     private func addBackground() {
         let garden = SKSpriteNode(imageNamed: "Garden")
-        garden.size = size
+        // Fill the screen height and keep the painting's proportions; the sides are cropped.
+        let texture = garden.texture!.size()
+        garden.size = CGSize(width: size.height * texture.width / texture.height, height: size.height)
         garden.zPosition = -10
         addChild(garden)
     }
@@ -40,7 +42,7 @@ final class GardenScene: SKScene {
     private func addBunny() {
         // Anchor at the feet so breathing stretches upwards from the ground.
         bunny.anchorPoint = CGPoint(x: 0.5, y: 0)
-        let height: CGFloat = 230
+        let height: CGFloat = 250
         bunny.size = CGSize(width: height * bunny.texture!.size().width / bunny.texture!.size().height, height: height)
         bunny.position = CGPoint(x: 0, y: -290)
         bunny.name = "bunny"
@@ -56,7 +58,7 @@ final class GardenScene: SKScene {
     }
 
     private func addCarrot() {
-        carrot.size = CGSize(width: 34, height: 64)
+        carrot.size = CGSize(width: 40, height: 76)
         carrot.name = "carrot"
         carrotHome = CGPoint(x: 135, y: -300)
         carrot.position = carrotHome
