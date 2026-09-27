@@ -18,6 +18,11 @@ struct ContentView: View {
         ZStack(alignment: .top) {
             SpriteView(scene: scene)
                 .ignoresSafeArea()
+            // A few Y2K twinkles over the garden, soft enough not to hide the painting.
+            SparkleField()
+                .opacity(0.6)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
             StatsBar(pet: pet)
                 .padding(.top, 8)
                 .onLongPressGesture(minimumDuration: 2) {
@@ -33,10 +38,15 @@ struct ContentView: View {
                 showingPicker = true
             } label: {
                 Image(systemName: "crown.fill")
-                    .font(.title3)
-                    .foregroundStyle(.yellow)
-                    .padding(10)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .font(.system(size: 20))
+                    .foregroundStyle(
+                        LinearGradient(colors: [Color(red: 1, green: 0.9, blue: 0.5), Color(red: 0.93, green: 0.68, blue: 0.2)],
+                                       startPoint: .top, endPoint: .bottom)
+                    )
+                    .frame(width: 46, height: 46)
+                    .background(Circle().fill(.white.opacity(0.9)))
+                    .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2.5))
+                    .shadow(color: Y2K.bubblegum.opacity(0.3), radius: 5, y: 2)
             }
             .padding(.trailing, 12)
             .padding(.top, 60)
@@ -149,33 +159,67 @@ struct ContentView: View {
     }
 }
 
+/// The four need bars, as a glossy Y2K sticker strip.
 private struct StatsBar: View {
     let pet: PetStats
 
     var body: some View {
-        HStack(spacing: 10) {
-            Meter(symbol: "carrot.fill", value: pet.hunger, tint: .orange)
-            Meter(symbol: "heart.fill", value: pet.happiness, tint: .pink)
-            Meter(symbol: "bubbles.and.sparkles.fill", value: pet.cleanliness, tint: .cyan)
-            Meter(symbol: "moon.stars.fill", value: pet.energy, tint: .indigo)
+        HStack(spacing: 8) {
+            Meter(symbol: "carrot.fill", value: pet.hunger,
+                  colors: [Color(red: 1.0, green: 0.80, blue: 0.55), Color(red: 1.0, green: 0.62, blue: 0.40)])
+            Meter(symbol: "heart.fill", value: pet.happiness,
+                  colors: [Y2K.stripeLight, Y2K.bubblegum])
+            Meter(symbol: "bubbles.and.sparkles.fill", value: pet.cleanliness,
+                  colors: [Y2K.mint, Y2K.babyBlue])
+            Meter(symbol: "moon.stars.fill", value: pet.energy,
+                  colors: [Y2K.babyBlue, Y2K.lilac])
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Capsule().fill(.white.opacity(0.88)))
+        .overlay(alignment: .top) {
+            // Shine across the top, like a glossy sticker.
+            Capsule()
+                .fill(LinearGradient(colors: [.white.opacity(0.9), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .frame(height: 12)
+                .padding(.horizontal, 16)
+                .padding(.top, 3)
+                .allowsHitTesting(false)
+        }
+        .overlay(Capsule().strokeBorder(Y2K.holo, lineWidth: 2.5))
+        .overlay(
+            Capsule()
+                .inset(by: 5)
+                .strokeBorder(Y2K.bubblegum.opacity(0.45), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+        )
+        .shadow(color: Y2K.bubblegum.opacity(0.3), radius: 6, y: 3)
     }
 }
 
 private struct Meter: View {
     let symbol: String
     let value: Double
-    let tint: Color
+    let colors: [Color]
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: symbol).foregroundStyle(tint)
-            ProgressView(value: value)
-                .tint(tint)
-                .frame(width: 44)
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(colors[1])
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(colors[0].opacity(0.35)))
+            ZStack(alignment: .leading) {
+                Capsule().fill(colors[0].opacity(0.3))
+                Capsule()
+                    .fill(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(8, 40 * value))
+                    .overlay(alignment: .top) {
+                        Capsule().fill(.white.opacity(0.55)).frame(height: 3).padding(.horizontal, 3).padding(.top, 1.5)
+                    }
+                    .animation(.spring, value: value)
+            }
+            .frame(width: 40, height: 10)
+            .overlay(Capsule().strokeBorder(.white, lineWidth: 1))
         }
     }
 }

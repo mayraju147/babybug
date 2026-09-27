@@ -99,8 +99,9 @@ final class GardenScene: SKScene {
         let bubble = SKNode()
         let cloud = SKShapeNode(circleOfRadius: 26)
         cloud.fillColor = SKColor(white: 1, alpha: 0.92)
-        cloud.strokeColor = SKColor(red: 0.55, green: 0.42, blue: 0.35, alpha: 0.5)
-        cloud.lineWidth = 1.2
+        // Bubblegum-pink rim to match the Y2K buttons.
+        cloud.strokeColor = SKColor(red: 0.96, green: 0.52, blue: 0.72, alpha: 0.85)
+        cloud.lineWidth = 2.5
         bubble.addChild(cloud)
         for (offset, radius) in [(CGPoint(x: -24, y: -26), 7.0), (CGPoint(x: -34, y: -38), 4.0)] {
             let dot = SKShapeNode(circleOfRadius: radius)
