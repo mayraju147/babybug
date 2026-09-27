@@ -10,7 +10,7 @@ A cosy virtual pet game for young kids on iPhone and iPad. A little princess or 
 
 ## What's here so far
 
-- On first launch, pick the princess or the prince (the crown button switches later).
+- On first launch, pick the princess or the prince on a Y2K-style sticker page (the crown button switches later).
 
 Painted art made with Gemini from the project prompts: the garden background and the bunny. The princess and prince are from Gemini too; only the carrot is still a placeholder.
 
@@ -29,3 +29,4 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/PetStats.swift`: the bunny's needs, real-time decay and saving
 - `babybug/Mood.swift`: which mood the bunny is in
 - `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince
+- `babybug/AppFont.swift`, `babybug/Fonts/`: the Yuji Mai font (by Kinuta Font Factory, free under the SIL Open Font License 1.1, from Google Fonts)
