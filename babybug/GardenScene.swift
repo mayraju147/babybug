@@ -20,6 +20,7 @@ final class GardenScene: SKScene {
     private var mood: Mood = .content
     private var thoughtBubble: SKNode?
     private var stage: Stage = .baby
+    private var pictureHeightScale = 1.0
     /// Where the bellflower cottage's door sits in the garden painting, in scene points.
     private static let cottageDoor = CGPoint(x: 88, y: 40)
     /// How far a finger has to rub back and forth on the bunny to count as one wash.
@@ -74,7 +75,10 @@ final class GardenScene: SKScene {
     }
 
     private func showMood(_ mood: Mood) {
-        bunny.texture = SKTexture(imageNamed: pictureName(for: mood))
+        let picture = pictureName(for: mood)
+        bunny.texture = SKTexture(imageNamed: picture)
+        // Only a curled-up sleeping picture is drawn lower; an upright stand-in keeps its full height.
+        pictureHeightScale = picture.hasSuffix(mood.imageSuffix) ? mood.heightScale : 1
         fitBunnyToTexture()
 
         thoughtBubble?.removeFromParent()
@@ -127,7 +131,7 @@ final class GardenScene: SKScene {
 
     private func fitBunnyToTexture() {
         guard let texture = bunny.texture else { return }
-        let height = stage.bunnyHeight * mood.heightScale
+        let height = stage.bunnyHeight * pictureHeightScale
         bunny.size = CGSize(width: height * texture.size().width / texture.size().height, height: height)
     }
 
