@@ -41,4 +41,4 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/Y2KStyle.swift`: shared Y2K look (stripes, sparkles, holographic rims)
 - `babybug/Stage.swift`: baby, young and grown, and when each one starts
 - `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince
-- `babybug/AppFont.swift`, `babybug/Fonts/`: the Yuji Mai font (by Kinuta Font Factory, free under the SIL Open Font License 1.1, from Google Fonts)
+- `babybug/AppFont.swift`, `babybug/Fonts/`, `babybug-Info.plist` (lists the font so iOS loads it): the Yuji Mai font (by Kinuta Font Factory, free under the SIL Open Font License 1.1, from Google Fonts)

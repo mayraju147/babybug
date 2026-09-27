@@ -476,7 +476,6 @@ final class GardenScene: SKScene {
         }
 
         // Words for the grown-up reading along; the sparkles do the job for little ones.
-        _ = AppFont.isLoaded
         let banner = SKLabelNode(fontNamed: AppFont.name)
         banner.text = "Your bunny grew!"
         banner.fontSize = 34
