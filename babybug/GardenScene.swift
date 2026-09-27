@@ -77,8 +77,15 @@ final class GardenScene: SKScene {
     private func showMood(_ mood: Mood) {
         let picture = pictureName(for: mood)
         bunny.texture = SKTexture(imageNamed: picture)
-        // Only a curled-up sleeping picture is drawn lower; an upright stand-in keeps its full height.
-        pictureHeightScale = picture.hasSuffix(mood.imageSuffix) ? mood.heightScale : 1
+        if stage != .baby, picture.hasPrefix(stage.imagePrefix),
+           let pose = UIImage(named: picture), let main = UIImage(named: stage.imagePrefix) {
+            // The older bunny's pictures are all painted at the same scale, so a droopy or curled-up pose
+            // is drawn shorter than the upright one by the same amount.
+            pictureHeightScale = pose.size.height / main.size.height
+        } else {
+            // Only a curled-up sleeping picture is drawn lower; an upright stand-in keeps its full height.
+            pictureHeightScale = picture.hasSuffix(mood.imageSuffix) ? mood.heightScale : 1
+        }
         fitBunnyToTexture()
 
         thoughtBubble?.removeFromParent()
