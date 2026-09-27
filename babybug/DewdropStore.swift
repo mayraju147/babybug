@@ -37,7 +37,7 @@ final class DewdropStore {
     /// A short, friendly note for the grown-up, such as "Waiting for approval".
     var message: String?
 
-    @ObservationIgnored private let inventory: Inventory
+    private let inventory: Inventory
     @ObservationIgnored private var updates: Task<Void, Never>?
 
     init(inventory: Inventory) {
