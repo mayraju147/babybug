@@ -12,7 +12,7 @@ A cosy virtual pet game for young kids on iPhone and iPad. A little princess or 
 
 - On first launch, pick the princess or the prince (the crown button switches later).
 
-Painted art made with Gemini from the project prompts: the garden background and the bunny. The princess is from Gemini too; the carrot and prince are still placeholders.
+Painted art made with Gemini from the project prompts: the garden background and the bunny. The princess and prince are from Gemini too; only the carrot is still a placeholder.
 
 - Tap the bunny to tickle it (happiness goes up).
 - Drag the carrot onto the bunny to feed it (hunger goes up).
