@@ -4,6 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var pet = PetStats.load()
     @State private var inventory = Inventory.load()
+    @State private var store: DewdropStore?
     @State private var showingShop = false
     @State private var scene = GardenScene(size: CGSize(width: 390, height: 844))
     @AppStorage("hero") private var heroChoice = ""
@@ -61,8 +62,10 @@ struct ContentView: View {
                     scene.setTreat(inventory.treat)
                     scene.setDecorations(inventory.decorations)
                 }) {
-                    ShopView(inventory: inventory) {
-                        showingShop = false
+                    if let store {
+                        ShopView(inventory: inventory, store: store) {
+                            showingShop = false
+                        }
                     }
                 }
             }
@@ -77,6 +80,10 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            // Start listening for App Store purchases straight away, so an approved "Ask to Buy" still arrives.
+            if store == nil {
+                store = DewdropStore(inventory: inventory)
+            }
             scene.onFeed = {
                 let needed = pet.hunger < 0.98
                 pet.feed(inventory.treat)

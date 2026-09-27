@@ -1,0 +1,65 @@
+{
+  "identifier": "A45D361C",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "2.00",
+      "familyShareable": false,
+      "internalID": "100001000",
+      "localizations": [
+        {
+          "description": "1000 dewdrops to spend in the Dewdrop Shop",
+          "displayName": "1000 Dewdrops",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.mayraju147.babybug.dewdrops1000",
+      "referenceName": "1000 Dewdrops",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "5.00",
+      "familyShareable": false,
+      "internalID": "100003500",
+      "localizations": [
+        {
+          "description": "3500 dewdrops to spend in the Dewdrop Shop",
+          "displayName": "3500 Dewdrops",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.mayraju147.babybug.dewdrops3500",
+      "referenceName": "3500 Dewdrops",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "10.00",
+      "familyShareable": false,
+      "internalID": "100008500",
+      "localizations": [
+        {
+          "description": "8500 dewdrops to spend in the Dewdrop Shop",
+          "displayName": "8500 Dewdrops",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.mayraju147.babybug.dewdrops8500",
+      "referenceName": "8500 Dewdrops",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_askToBuyEnabled": false,
+    "_billingIssuesEnabled": false,
+    "_disableDialogs": false,
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

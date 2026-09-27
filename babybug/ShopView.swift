@@ -4,7 +4,10 @@ import SwiftUI
 /// Same Y2K sticker-page look as the princess and prince picker.
 struct ShopView: View {
     let inventory: Inventory
+    let store: DewdropStore
     let onClose: () -> Void
+
+    @State private var showingMore = false
 
     private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
 
@@ -36,7 +39,19 @@ struct ShopView: View {
                     .foregroundStyle(Y2K.ink)
                     .shadow(color: .white, radius: 0, x: 2, y: 2)
 
-                DewdropCounter(count: inventory.dewdrops, size: 22)
+                HStack(spacing: 8) {
+                    DewdropCounter(count: inventory.dewdrops, size: 22)
+                    Button {
+                        showingMore = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Y2K.bubblegum))
+                    }
+                    .accessibilityLabel("Get more dewdrops")
+                }
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
@@ -48,6 +63,9 @@ struct ShopView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingMore) {
+            MoreDewdropsView(store: store) { showingMore = false }
+        }
     }
 
     private func section(_ title: String, kind: ShopItem.Kind) -> some View {
@@ -58,7 +76,9 @@ struct ShopView: View {
                 .padding(.leading, 6)
             LazyVGrid(columns: columns, spacing: 14) {
                 ForEach(ShopItem.allCases.filter { $0.kind == kind }) { item in
-                    ShopCard(item: item, inventory: inventory)
+                    ShopCard(item: item, inventory: inventory) {
+                        showingMore = true
+                    }
                 }
             }
         }
@@ -110,6 +130,8 @@ struct DewdropIcon: View {
 private struct ShopCard: View {
     let item: ShopItem
     let inventory: Inventory
+    /// Called when the child taps something they can't afford yet.
+    let onNeedMore: () -> Void
 
     @State private var shakes = 0
     @State private var bounce = false
@@ -212,8 +234,11 @@ private struct ShopCard: View {
         } else if inventory.buy(item) {
             pop()
         } else {
-            // Not enough dewdrops yet: a little "no" wobble.
+            // Not enough dewdrops yet: a little "no" wobble, then the offer of more.
             withAnimation(.linear(duration: 0.4)) { shakes += 1 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                onNeedMore()
+            }
         }
     }
 
@@ -241,5 +266,6 @@ private struct Shake: GeometryEffect {
 }
 
 #Preview {
-    ShopView(inventory: Inventory()) {}
+    let inventory = Inventory()
+    ShopView(inventory: inventory, store: DewdropStore(inventory: inventory)) {}
 }
