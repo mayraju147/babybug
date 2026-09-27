@@ -26,7 +26,7 @@ Painted art made with Gemini from the project prompts: the garden background and
 - Dewdrops: looking after the bunny when it needs it (feeding when hungry, tickling when it wants love, bathing when dirty) earns a dewdrop, shown top left. The basket button opens the Dewdrop Shop: treats (strawberry, clover, cupcake) replace the carrot in the garden and fill the food bar more; decorations (flower pot, lantern, mushroom) appear in the garden. Items show an emoji until their painted picture is added (`FoodStrawberry`, `DecorLantern`, ... and `Dewdrop`).
 
 - More dewdrops: tapping something too expensive (or the + by the shop's counter) offers packs of 1000 ($2), 3500 ($5) and 8500 ($10) dewdrops, after a grown-up check (a times-table sum), as Apple requires in kids' apps. Uses StoreKit 2; purchases approved later through Ask to Buy still arrive.
-  - To test in the simulator: Product > Scheme > Edit Scheme > Run > Options > StoreKit Configuration > `Babybug.storekit`.
+  - To test in the simulator: Product > Scheme > Edit Scheme > Run > Options > StoreKit Configuration > `Babybug.storekit` (it's in the babybug folder).
   - For the real App Store: create three consumable in-app purchases in App Store Connect with IDs `com.mayraju147.babybug.dewdrops1000`, `...dewdrops3500`, `...dewdrops8500`.
 
 ## Code map
