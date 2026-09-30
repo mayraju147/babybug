@@ -41,6 +41,10 @@ final class GardenScene: SKScene {
     private var isSleeping = false
     private var night: SKNode?
     private var butterfly: SKNode?
+    /// Where the bunny was last frame, so its name tag and thought bubble can follow it around.
+    private var lastBunnyPosition = CGPoint.zero
+    /// The patch of grass the bunny hops about on, clear of the princess or prince.
+    private static let meadow = CGRect(x: -30, y: -335, width: 180, height: 70)
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -65,6 +69,7 @@ final class GardenScene: SKScene {
         }
         showMood(mood)
         startButterflies()
+        startLife()
     }
 
     /// Makes the bunny baby, young or grown. With `celebrate`, it pops up bigger with a shower of sparkles.
@@ -588,21 +593,183 @@ final class GardenScene: SKScene {
 
     private func tickle() {
         onTickle?()
+        // A giggly wiggle and a happy little jump, with hearts.
         let wiggle = SKAction.sequence([
             .rotate(toAngle: 0.08, duration: 0.08),
             .rotate(toAngle: -0.08, duration: 0.08),
             .rotate(toAngle: 0, duration: 0.08),
         ])
         bunny.run(.repeat(wiggle, count: 2))
+        bunny.run(jump(height: 34, duration: 0.36))
+        puff(["♥", "♥", "✦"], count: 5)
+    }
+
+    // MARK: - Life
+
+    /// Every few seconds the awake bunny does something: hops about, sniffs the flowers, chases a butterfly,
+    /// wiggles its nose, or does a happy jump. What it does depends on how it feels.
+    private func startLife() {
+        lastBunnyPosition = bunny.position
+        run(.repeatForever(.sequence([
+            .wait(forDuration: 5, withRange: 4),
+            .run { [weak self] in self?.doSomething() },
+        ])), withKey: "life")
+    }
+
+    override func update(_ currentTime: TimeInterval) {
+        let dx = bunny.position.x - lastBunnyPosition.x
+        let dy = bunny.position.y - lastBunnyPosition.y
+        if dx != 0 || dy != 0 {
+            for node in [nameTag, thoughtBubble].compactMap({ $0 }) {
+                node.position = CGPoint(x: node.position.x + dx, y: node.position.y + dy)
+            }
+            lastBunnyPosition = bunny.position
+        }
+    }
+
+    private var isBusy: Bool {
+        isSleeping || touchingBunny || draggingCarrot || bunny.action(forKey: "hop") != nil
+    }
+
+    private func doSomething() {
+        guard !isBusy else { return }
+        switch mood {
+        case .sleepy, .lonely:
+            // Too tired or too sad to play: just a little nose wiggle.
+            if Bool.random() { wiggleNose() }
+        case .hungry:
+            // Off to look for the treat.
+            hop(to: CGPoint(x: carrotHome.x - 55, y: carrotHome.y + 20))
+        default:
+            let roll = Int.random(in: 0..<10)
+            if roll < 4 {
+                hop(to: CGPoint(x: .random(in: Self.meadow.minX...Self.meadow.maxX),
+                                y: .random(in: Self.meadow.minY...Self.meadow.maxY)))
+            } else if roll < 6 {
+                sniff()
+            } else if roll < 8, let butterfly {
+                hop(to: CGPoint(x: butterfly.position.x, y: bunny.position.y))
+            } else if mood == .happy {
+                binky()
+            } else {
+                wiggleNose()
+            }
+        }
+    }
+
+    /// Hops to a spot on the meadow, a few bunny hops at a time, turning to face the way it goes.
+    private func hop(to target: CGPoint, then finish: SKAction? = nil) {
+        let meadow = Self.meadow
+        let goal = CGPoint(x: min(max(target.x, meadow.minX), meadow.maxX),
+                           y: min(max(target.y, meadow.minY), meadow.maxY))
+        let dx = goal.x - bunny.position.x
+        let dy = goal.y - bunny.position.y
+        let distance = hypot(dx, dy)
+        var steps: [SKAction] = []
+        if distance > 8 {
+            face(dx)
+            let count = max(1, Int((distance / 50).rounded(.up)))
+            for _ in 0..<count {
+                steps.append(.group([
+                    .moveBy(x: dx / CGFloat(count), y: dy / CGFloat(count), duration: 0.3),
+                    jump(height: 20, duration: 0.3),
+                ]))
+                steps.append(.wait(forDuration: 0.1))
+            }
+        }
+        if let finish { steps.append(finish) }
+        guard !steps.isEmpty else { return }
+        bunny.run(.sequence(steps), withKey: "hop")
+    }
+
+    /// Up and back down to where it started, springy at the top.
+    private func jump(height: CGFloat, duration: TimeInterval) -> SKAction {
+        let up = SKAction.moveBy(x: 0, y: height, duration: duration / 2)
+        up.timingMode = .easeOut
+        let down = SKAction.moveBy(x: 0, y: -height, duration: duration / 2)
+        down.timingMode = .easeIn
+        return .sequence([up, down])
+    }
+
+    /// The painted bunny faces right; flip it to face left when it hops that way.
+    private func face(_ dx: CGFloat) {
+        guard abs(dx) > 4 else { return }
+        bunny.xScale = dx > 0 ? abs(bunny.xScale) : -abs(bunny.xScale)
+    }
+
+    private func wiggleNose() {
+        let twitch = SKAction.sequence([
+            .rotate(toAngle: 0.03, duration: 0.06),
+            .rotate(toAngle: -0.03, duration: 0.06),
+        ])
+        bunny.run(.sequence([.repeat(twitch, count: 3), .rotate(toAngle: 0, duration: 0.06)]))
+    }
+
+    /// Hops over to a flower (or a decoration) and has a good sniff.
+    private func sniff() {
+        let spots = decorations.map(\.gardenSpot) + [CGPoint(x: -20, y: -330), CGPoint(x: 150, y: -300)]
+        guard let spot = spots.randomElement() else { return }
+        let side: CGFloat = spot.x > bunny.position.x ? -45 : 45
+        let lean = SKAction.run { [weak self] in
+            guard let self else { return }
+            let down: CGFloat = self.bunny.xScale > 0 ? -0.12 : 0.12
+            self.bunny.run(.sequence([
+                .rotate(toAngle: down, duration: 0.2),
+                .repeat(.sequence([.rotate(byAngle: 0.04, duration: 0.1), .rotate(byAngle: -0.04, duration: 0.1)]), count: 3),
+                .rotate(toAngle: 0, duration: 0.2),
+            ]))
+            self.puff(["✿", "❀"], count: 3)
+        }
+        hop(to: CGPoint(x: spot.x + side, y: bunny.position.y), then: .sequence([.run { [weak self] in
+            // Turn towards the flower before sniffing.
+            guard let self else { return }
+            self.face(spot.x - self.bunny.position.x)
+        }, lean, .wait(forDuration: 1.2)]))
+    }
+
+    /// A happy bunny jump with a twist in the air.
+    private func binky() {
+        bunny.run(.group([
+            jump(height: 60, duration: 0.5),
+            .sequence([.rotate(toAngle: 0.35, duration: 0.2), .rotate(toAngle: 0, duration: 0.3)]),
+        ]), withKey: "hop")
+        puff(["♥", "✦"], count: 4)
+    }
+
+    /// A few little shapes that float up from the bunny's head and fade.
+    private func puff(_ symbols: [String], count: Int) {
+        let colors: [SKColor] = [
+            SKColor(red: 0.96, green: 0.52, blue: 0.72, alpha: 1),
+            SKColor(red: 0.80, green: 0.72, blue: 0.98, alpha: 1),
+            SKColor(red: 1.0, green: 0.88, blue: 0.45, alpha: 1),
+        ]
+        for i in 0..<count {
+            let label = SKLabelNode(text: symbols[i % symbols.count])
+            label.fontSize = .random(in: 16...24)
+            label.fontColor = colors[i % colors.count]
+            label.verticalAlignmentMode = .center
+            label.position = CGPoint(x: bunny.position.x + .random(in: -30...30),
+                                     y: bunny.position.y + stage.bunnyHeight * 0.8)
+            label.zPosition = 6
+            addChild(label)
+            label.run(.sequence([
+                .group([
+                    .moveBy(x: .random(in: -25...25), y: .random(in: 40...80), duration: 1.0),
+                    .sequence([.wait(forDuration: 0.5), .fadeOut(withDuration: 0.5)]),
+                ]),
+                .removeFromParent(),
+            ]))
+        }
     }
 
     // MARK: - Growing up
 
     private func celebrateGrowing() {
+        // Relative scaling, so a bunny facing left stays facing left.
         bunny.run(.sequence([
-            .scale(to: 1.25, duration: 0.25),
-            .scale(to: 0.95, duration: 0.15),
-            .scale(to: 1.0, duration: 0.15),
+            .scale(by: 1.25, duration: 0.25),
+            .scale(by: 0.76, duration: 0.15),
+            .scale(by: 1 / (1.25 * 0.76), duration: 0.15),
         ]))
 
         let center = CGPoint(x: bunny.position.x, y: bunny.position.y + stage.bunnyHeight / 2)

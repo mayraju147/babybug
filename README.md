@@ -39,6 +39,8 @@ Painted art made with Gemini from the project prompts: the garden background and
 - Daily gift and streak: the first visit each day brings a gift box of dewdrops. Visiting days in a row fills a 7-day week (5, 5, 10, 10, 15, 15, then 40 dewdrops on day 7). Missing a day only starts the week again; the bunny is never punished.
 - Garden book (the star button under the basket): today's three quests (such as "Catch 3 butterflies"), each worth a star and 5 dewdrops, plus 10 more for finishing all three; and a sticker album of 15 stickers earned for things like feeding the bunny 10 times, a 7-day streak or buying an outfit. A pink dot on the star means quests are waiting. Notes pop up at the top when a quest is done or a sticker is earned.
 
+- A lively bunny: every few seconds the awake bunny does something on its own. It hops about the meadow, sniffs flowers and decorations, chases butterflies, wiggles its nose, or does a happy twisty jump. A hungry bunny hops over to the treat; a sleepy or lonely one stays put. Tickling makes it jump with hearts.
+
 - Sound: a soft music-box waltz plays in the garden and a lullaby at night, with little sounds for tickles, munching, bubbles, dewdrops, growing up, buying and bedtime. All music and sounds are original, made for babybug. The speaker button under the crown turns sound off or on, and the phone's silent switch mutes it too.
 
 ## Code map
