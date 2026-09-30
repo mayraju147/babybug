@@ -13,6 +13,10 @@ final class GardenScene: SKScene {
     var onNameTapped: (() -> Void)?
     /// Called when the child catches a butterfly.
     var onButterflyCaught: (() -> Void)?
+    /// Called when the child finds a present hidden in the grass.
+    var onPresentFound: (() -> Void)?
+    /// Called when the child splashes in a puddle after the rain.
+    var onSplash: (() -> Void)?
 
     private let bunny = SKSpriteNode(imageNamed: "Bunny")
     private var carrot = SKNode()
@@ -43,6 +47,10 @@ final class GardenScene: SKScene {
     private var butterfly: SKNode?
     /// Where the bunny was last frame, so its name tag and thought bubble can follow it around.
     private var lastBunnyPosition = CGPoint.zero
+    private var present: SKNode?
+    private var visitors: [SKNode] = []
+    private var puddles: [SKNode] = []
+    private var rain: SKNode?
     /// The patch of grass the bunny hops about on, clear of the princess or prince.
     private static let meadow = CGRect(x: -30, y: -335, width: 180, height: 70)
 
@@ -70,6 +78,7 @@ final class GardenScene: SKScene {
         showMood(mood)
         startButterflies()
         startLife()
+        startSurprises()
     }
 
     /// Makes the bunny baby, young or grown. With `celebrate`, it pops up bigger with a shower of sparkles.
@@ -348,6 +357,12 @@ final class GardenScene: SKScene {
             onBedtimeTapped?()
         } else if let butterfly, butterfly.calculateAccumulatedFrame().insetBy(dx: -22, dy: -22).contains(point) {
             catchButterfly(butterfly)
+        } else if let present, present.calculateAccumulatedFrame().insetBy(dx: -18, dy: -18).contains(point) {
+            openPresent(present)
+        } else if let visitor = visitors.first(where: { $0.calculateAccumulatedFrame().insetBy(dx: -14, dy: -14).contains(point) }) {
+            greet(visitor)
+        } else if let puddle = puddles.first(where: { $0.calculateAccumulatedFrame().insetBy(dx: -10, dy: -10).contains(point) }) {
+            splash(puddle)
         } else if let nameTag, nameTag.calculateAccumulatedFrame().insetBy(dx: -6, dy: -6).contains(point) {
             onNameTapped?()
         } else if carrot.calculateAccumulatedFrame().insetBy(dx: -12, dy: -12).contains(point) {
@@ -504,6 +519,284 @@ final class GardenScene: SKScene {
         ]))
     }
 
+    // MARK: - Surprises
+
+    /// Now and then something happens in the garden: a present hides in the grass, a visitor wanders by,
+    /// or a rain shower leaves puddles to splash in and a rainbow.
+    private func startSurprises() {
+        run(.sequence([
+            .wait(forDuration: 15),
+            .repeatForever(.sequence([
+                .run { [weak self] in self?.surprise() },
+                .wait(forDuration: 40, withRange: 30),
+            ])),
+        ]), withKey: "surprises")
+    }
+
+    private func surprise() {
+        guard !isSleeping else { return }
+        let roll = Int.random(in: 0..<20)
+        if roll < 8 {
+            hidePresent()
+        } else if roll < 15 {
+            if Bool.random() { sendHedgehog() } else { sendBird() }
+        } else if rain == nil {
+            startRain()
+        }
+    }
+
+    /// Picture from the asset catalog if it's there, otherwise an emoji stand-in.
+    private static func picture(_ name: String, emoji: String, height: CGFloat) -> SKNode {
+        if let image = UIImage(named: name) {
+            let sprite = SKSpriteNode(texture: SKTexture(image: image))
+            sprite.size = CGSize(width: height * image.size.width / image.size.height, height: height)
+            return sprite
+        }
+        let label = SKLabelNode(text: emoji)
+        label.fontSize = height * 0.8
+        label.verticalAlignmentMode = .center
+        return label
+    }
+
+    // Presents
+
+    private func hidePresent() {
+        guard present == nil else { return }
+        let gift = Self.picture("Present", emoji: "🎁", height: 44)
+        let spots = [CGPoint(x: -165, y: -330), CGPoint(x: 165, y: -365), CGPoint(x: -40, y: -390),
+                     CGPoint(x: 120, y: -250), CGPoint(x: -150, y: -250)]
+        gift.position = spots.randomElement() ?? .zero
+        gift.zPosition = 1.5
+        gift.setScale(0)
+        addChild(gift)
+        present = gift
+        // Peeks out of the grass and wiggles now and then, so sharp eyes can spot it.
+        let wiggle = SKAction.sequence([
+            .rotate(toAngle: 0.15, duration: 0.08), .rotate(toAngle: -0.15, duration: 0.08),
+            .rotate(toAngle: 0.1, duration: 0.08), .rotate(toAngle: 0, duration: 0.08),
+            .wait(forDuration: 1.6),
+        ])
+        gift.run(.sequence([
+            .scale(to: 1, duration: 0.3),
+            .repeat(wiggle, count: 14),
+            .scale(to: 0, duration: 0.3),
+            .removeFromParent(),
+            .run { [weak self, weak gift] in
+                if self?.present === gift { self?.present = nil }
+            },
+        ]))
+    }
+
+    private func openPresent(_ gift: SKNode) {
+        present = nil
+        gift.removeAllActions()
+        onPresentFound?()
+        let center = gift.position
+        for i in 0..<10 {
+            let sparkle = SKLabelNode(text: i.isMultiple(of: 2) ? "✦" : "♥")
+            sparkle.fontSize = .random(in: 14...22)
+            sparkle.fontColor = i.isMultiple(of: 3) ? SKColor(red: 1, green: 0.85, blue: 0.4, alpha: 1)
+                                                     : SKColor(red: 0.96, green: 0.52, blue: 0.72, alpha: 1)
+            sparkle.position = center
+            sparkle.zPosition = 6
+            addChild(sparkle)
+            let angle = CGFloat(i) / 10 * 2 * .pi
+            sparkle.run(.sequence([
+                .group([.moveBy(x: cos(angle) * 60, y: sin(angle) * 60 + 30, duration: 0.7), .fadeOut(withDuration: 0.7)]),
+                .removeFromParent(),
+            ]))
+        }
+        gift.run(.sequence([.scale(to: 1.5, duration: 0.15), .group([.scale(to: 0, duration: 0.25), .fadeOut(withDuration: 0.25)]), .removeFromParent()]))
+    }
+
+    // Visitors
+
+    /// A little hedgehog wanders across the front of the garden, stops to say hello, and wanders on.
+    private func sendHedgehog() {
+        let hedgehog = Self.picture("Hedgehog", emoji: "🦔", height: 56)
+        let edge = size.width / 2 + 50
+        hedgehog.position = CGPoint(x: edge, y: -385)
+        hedgehog.zPosition = 1.6
+        addChild(hedgehog)
+        visitors.append(hedgehog)
+        let waddle = SKAction.repeatForever(.sequence([
+            .rotate(toAngle: 0.06, duration: 0.2), .rotate(toAngle: -0.06, duration: 0.2),
+        ]))
+        hedgehog.run(waddle, withKey: "waddle")
+        hedgehog.run(.sequence([
+            .moveTo(x: 20, duration: 5),
+            .run { [weak hedgehog] in hedgehog?.removeAction(forKey: "waddle"); hedgehog?.zRotation = 0 },
+            jump(height: 12, duration: 0.3),
+            .wait(forDuration: 2.5),
+            .run { [weak hedgehog] in hedgehog?.run(waddle, withKey: "waddle") },
+            .moveTo(x: -edge, duration: 5),
+            .removeFromParent(),
+            .run { [weak self, weak hedgehog] in self?.visitors.removeAll { $0 === hedgehog } },
+        ]))
+    }
+
+    /// A small bird flutters across the sky.
+    private func sendBird() {
+        let bird = Self.picture("Bird", emoji: "🐦", height: 40)
+        let edge = size.width / 2 + 40
+        bird.position = CGPoint(x: edge, y: .random(in: 120...280))
+        bird.zPosition = 2
+        addChild(bird)
+        visitors.append(bird)
+        bird.run(.repeatForever(.sequence([
+            .moveBy(x: 0, y: 14, duration: 0.3), .moveBy(x: 0, y: -14, duration: 0.3),
+        ])))
+        bird.run(.sequence([
+            .moveTo(x: -edge, duration: 9),
+            .removeFromParent(),
+            .run { [weak self, weak bird] in self?.visitors.removeAll { $0 === bird } },
+        ]))
+    }
+
+    private func greet(_ visitor: SKNode) {
+        SoundPlayer.shared.play(.tap)
+        visitor.run(jump(height: 18, duration: 0.3))
+        for _ in 0..<4 {
+            let heart = SKLabelNode(text: "♥")
+            heart.fontSize = .random(in: 14...20)
+            heart.fontColor = SKColor(red: 0.96, green: 0.52, blue: 0.72, alpha: 1)
+            heart.position = CGPoint(x: visitor.position.x + .random(in: -20...20), y: visitor.position.y + 30)
+            heart.zPosition = 6
+            addChild(heart)
+            heart.run(.sequence([
+                .group([.moveBy(x: .random(in: -20...20), y: 50, duration: 0.9), .fadeOut(withDuration: 0.9)]),
+                .removeFromParent(),
+            ]))
+        }
+    }
+
+    // Rain
+
+    private func startRain() {
+        let shower = SKNode()
+        shower.zPosition = 4.5
+        let tint = SKSpriteNode(color: SKColor(red: 0.35, green: 0.45, blue: 0.65, alpha: 0.2),
+                                size: CGSize(width: size.width * 2, height: size.height))
+        shower.addChild(tint)
+        shower.alpha = 0
+        addChild(shower)
+        rain = shower
+
+        let fall = SKAction.run { [weak self, weak shower] in
+            guard let self, let shower else { return }
+            for _ in 0..<3 {
+                let path = CGMutablePath()
+                path.move(to: .zero)
+                path.addLine(to: CGPoint(x: -3, y: -16))
+                let drop = SKShapeNode(path: path)
+                drop.strokeColor = SKColor(red: 0.85, green: 0.93, blue: 1, alpha: 0.8)
+                drop.lineWidth = 1.6
+                drop.position = CGPoint(x: .random(in: -self.size.width / 2...self.size.width / 2 + 60),
+                                        y: self.size.height / 2 + 20)
+                shower.addChild(drop)
+                drop.run(.sequence([
+                    .moveBy(x: -40, y: -self.size.height - 40, duration: .random(in: 0.6...0.9)),
+                    .removeFromParent(),
+                ]))
+            }
+        }
+        shower.run(.sequence([
+            .fadeIn(withDuration: 1),
+            .group([
+                .repeat(.sequence([fall, .wait(forDuration: 0.04)]), count: 400),
+                .sequence([.wait(forDuration: 5), .run { [weak self] in self?.makePuddles() }]),
+            ]),
+            .run { [weak self] in self?.endRain(quickly: false) },
+        ]))
+    }
+
+    private func makePuddles() {
+        guard puddles.isEmpty else { return }
+        for spot in [CGPoint(x: -150, y: -395), CGPoint(x: 10, y: -405), CGPoint(x: 160, y: -390)] {
+            let puddle = SKShapeNode(ellipseOf: CGSize(width: .random(in: 70...95), height: 20))
+            puddle.fillColor = SKColor(red: 0.62, green: 0.78, blue: 0.95, alpha: 0.55)
+            puddle.strokeColor = SKColor(red: 0.85, green: 0.93, blue: 1, alpha: 0.9)
+            puddle.lineWidth = 1.5
+            puddle.position = spot
+            puddle.zPosition = 0.8
+            puddle.setScale(0)
+            addChild(puddle)
+            puddle.run(.scale(to: 1, duration: 2))
+            puddles.append(puddle)
+        }
+    }
+
+    private func splash(_ puddle: SKNode) {
+        SoundPlayer.shared.play(.bubble)
+        onSplash?()
+        for _ in 0..<8 {
+            let drop = SKShapeNode(circleOfRadius: .random(in: 2.5...5))
+            drop.fillColor = SKColor(red: 0.75, green: 0.88, blue: 1, alpha: 0.9)
+            drop.strokeColor = .clear
+            drop.position = puddle.position
+            drop.zPosition = 3
+            addChild(drop)
+            let up = SKAction.moveBy(x: .random(in: -40...40), y: .random(in: 30...70), duration: 0.25)
+            up.timingMode = .easeOut
+            let down = SKAction.moveBy(x: .random(in: -10...10), y: -60, duration: 0.3)
+            down.timingMode = .easeIn
+            drop.run(.sequence([up, .group([down, .fadeOut(withDuration: 0.3)]), .removeFromParent()]))
+        }
+        puddle.run(.sequence([.scaleX(to: 1.15, duration: 0.1), .scaleX(to: 1, duration: 0.15)]))
+    }
+
+    /// Stops the rain. After a proper shower, a rainbow shows and the puddles dry up a little later.
+    private func endRain(quickly: Bool) {
+        guard let shower = rain else {
+            if quickly { dryPuddles() }
+            return
+        }
+        rain = nil
+        shower.removeAllActions()
+        shower.run(.sequence([.fadeOut(withDuration: quickly ? 0.3 : 1.5), .removeFromParent()]))
+        if quickly {
+            dryPuddles()
+            return
+        }
+        showRainbow()
+        run(.sequence([.wait(forDuration: 25), .run { [weak self] in self?.dryPuddles() }]))
+    }
+
+    private func dryPuddles() {
+        for puddle in puddles {
+            puddle.run(.sequence([.scale(to: 0, duration: 1.5), .removeFromParent()]))
+        }
+        puddles = []
+    }
+
+    private func showRainbow() {
+        let rainbow = SKNode()
+        rainbow.zPosition = -5
+        let colors: [SKColor] = [
+            SKColor(red: 1, green: 0.55, blue: 0.6, alpha: 1), SKColor(red: 1, green: 0.75, blue: 0.5, alpha: 1),
+            SKColor(red: 1, green: 0.93, blue: 0.55, alpha: 1), SKColor(red: 0.65, green: 0.9, blue: 0.65, alpha: 1),
+            SKColor(red: 0.6, green: 0.8, blue: 1, alpha: 1), SKColor(red: 0.78, green: 0.68, blue: 0.98, alpha: 1),
+        ]
+        for (i, color) in colors.enumerated() {
+            let path = CGMutablePath()
+            path.addArc(center: .zero, radius: 250 - CGFloat(i) * 10, startAngle: .pi * 0.12, endAngle: .pi * 0.88, clockwise: false)
+            let band = SKShapeNode(path: path)
+            band.strokeColor = color
+            band.lineWidth = 10
+            band.lineCap = .round
+            rainbow.addChild(band)
+        }
+        rainbow.position = CGPoint(x: 0, y: -60)
+        rainbow.alpha = 0
+        addChild(rainbow)
+        rainbow.run(.sequence([
+            .fadeAlpha(to: 0.5, duration: 1.5),
+            .wait(forDuration: 7),
+            .fadeOut(withDuration: 2),
+            .removeFromParent(),
+        ]))
+    }
+
     // MARK: - Bedtime
 
     /// Dims the garden to a starry night while the bunny sleeps, and brings the day back when it wakes.
@@ -511,6 +804,7 @@ final class GardenScene: SKScene {
         guard sleeping != isSleeping else { return }
         isSleeping = sleeping
         if sleeping {
+            endRain(quickly: true)
             if let butterfly {
                 self.butterfly = nil
                 butterfly.run(.sequence([.fadeOut(withDuration: 0.5), .removeFromParent()]))

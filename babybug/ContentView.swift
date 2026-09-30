@@ -19,6 +19,8 @@ struct ContentView: View {
     /// Butterflies caught today, so a day's catch pays out a limited number of dewdrops.
     @AppStorage("butterflyDay") private var butterflyDay = ""
     @AppStorage("butterfliesToday") private var butterfliesToday = 0
+    @AppStorage("presentsDay") private var presentsDay = ""
+    @AppStorage("presentsToday") private var presentsToday = 0
     @AppStorage(Reminders.onKey) private var remindersOn = false
     @State private var showingReminders = false
     @Environment(\.scenePhase) private var scenePhase
@@ -243,6 +245,12 @@ struct ContentView: View {
             scene.onButterflyCaught = {
                 catchButterfly()
             }
+            scene.onPresentFound = {
+                openPresent()
+            }
+            scene.onSplash = {
+                record(.splash)
+            }
             scene.setBunnyName(bunnyName)
             SoundPlayer.shared.playMusic(pet.isSleeping ? .night : .garden)
             scene.setSleeping(pet.isSleeping)
@@ -292,6 +300,24 @@ struct ContentView: View {
                 .background(Circle().fill(.white.opacity(0.9)))
                 .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2))
         }
+    }
+
+    /// A present hidden in the grass holds a few dewdrops, for the first 5 found each day.
+    private func openPresent() {
+        let today = GardenProgress.dayString()
+        if presentsDay != today {
+            presentsDay = today
+            presentsToday = 0
+        }
+        presentsToday += 1
+        if presentsToday <= 5 {
+            let amount = Int.random(in: 3...8)
+            inventory.earn(amount)
+            announce("🎁 You found a present! +\(amount)")
+        } else {
+            announce("🎁 A present full of hugs!")
+        }
+        record(.present)
     }
 
     /// Each butterfly caught earns a dewdrop, up to 10 a day; after that they're just for fun.

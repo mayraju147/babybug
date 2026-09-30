@@ -41,6 +41,8 @@ Painted art made with Gemini from the project prompts: the garden background and
 
 - A lively bunny: every few seconds the awake bunny does something on its own. It hops about the meadow, sniffs flowers and decorations, chases butterflies, wiggles its nose, or does a happy twisty jump. A hungry bunny hops over to the treat; a sleepy or lonely one stays put. Tickling makes it jump with hearts.
 
+- Surprises: every so often something happens in the garden. A present hides in the grass and wiggles (tap it for 3 to 8 dewdrops, up to 5 a day), a hedgehog wanders by and says hello, a bird flies over, or a rain shower leaves puddles to splash in and a rainbow. Pictures `Present`, `Hedgehog` and `Bird` replace the emoji stand-ins once added.
+
 - Sound: a soft music-box waltz plays in the garden and a lullaby at night, with little sounds for tickles, munching, bubbles, dewdrops, growing up, buying and bedtime. All music and sounds are original, made for babybug. The speaker button under the crown turns sound off or on, and the phone's silent switch mutes it too.
 
 ## Code map
