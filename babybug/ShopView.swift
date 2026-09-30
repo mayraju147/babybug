@@ -155,7 +155,7 @@ private struct ShopCard: View {
             VStack(spacing: 6) {
                 picture
                     .frame(height: 90)
-                Text(item.title)
+                Text(item.title(for: hero))
                     .font(.whimsy(18))
                     .foregroundStyle(Y2K.ink)
                     .lineLimit(1)
@@ -256,10 +256,10 @@ private struct ShopCard: View {
     }
 
     private var accessibilityText: String {
-        if isChosen && item.kind == .outfit { return "\(item.title), wearing. Tap to take it off" }
-        if isChosen { return "\(item.title), chosen" }
-        if isOwned { return item.title }
-        return "\(item.title), \(item.price) dewdrops"
+        if isChosen && item.kind == .outfit { return "\(item.title(for: hero)), wearing. Tap to take it off" }
+        if isChosen { return "\(item.title(for: hero)), chosen" }
+        if isOwned { return item.title(for: hero) }
+        return "\(item.title(for: hero)), \(item.price) dewdrops"
     }
 
     private func tap() {

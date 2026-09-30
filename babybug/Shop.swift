@@ -37,6 +37,11 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// The name shown in the shop. The prince's version of the flower fairy outfit is a bookworm outfit (may's pick).
+    func title(for hero: Hero) -> String {
+        self == .flowerFairy && hero == .prince ? "Bookworm" : title
+    }
+
     /// Dewdrops it costs. The carrot is free and owned from the start.
     var price: Int {
         switch self {
