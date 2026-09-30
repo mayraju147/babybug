@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var scene = GardenScene(size: CGSize(width: 390, height: 844))
     @AppStorage("hero") private var heroChoice = ""
     @AppStorage("bunnyName") private var bunnyName = ""
+    @AppStorage("soundOn") private var soundOn = true
     @State private var showingNamer = false
     @State private var showingPicker = false
     /// The stage the garden is showing, so a new one can be celebrated.
@@ -57,9 +58,25 @@ struct ContentView: View {
                     .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2.5))
                     .shadow(color: Y2K.bubblegum.opacity(0.3), radius: 5, y: 2)
             }
+            .accessibilityLabel("Change princess or prince")
+            .overlay(alignment: .bottom) {
+                // Sound on or off, for grown-ups (and quiet times).
+                Button {
+                    soundOn.toggle()
+                    SoundPlayer.shared.isOn = soundOn
+                } label: {
+                    Image(systemName: soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Y2K.ink)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(.white.opacity(0.9)))
+                        .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2))
+                }
+                .offset(y: 50)
+                .accessibilityLabel(soundOn ? "Turn sound off" : "Turn sound on")
+            }
             .padding(.trailing, 12)
             .padding(.top, 60)
-            .accessibilityLabel("Change princess or prince")
         }
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 10) {
@@ -110,6 +127,7 @@ struct ContentView: View {
             }
             scene.onFeed = {
                 let needed = pet.hunger < 0.98
+                SoundPlayer.shared.play(.munch)
                 pet.feed(inventory.treat)
                 if needed { earnDewdrop() }
                 scene.setMood(pet.mood())
@@ -117,6 +135,7 @@ struct ContentView: View {
             }
             scene.onTickle = {
                 let needed = pet.happiness < 0.98
+                SoundPlayer.shared.play(.tickle)
                 pet.play()
                 if needed { earnDewdrop() }
                 scene.setMood(pet.mood())
@@ -124,6 +143,7 @@ struct ContentView: View {
             }
             scene.onBathe = {
                 let needed = pet.cleanliness < 0.98
+                SoundPlayer.shared.play(.bubble)
                 pet.bathe()
                 if needed { earnDewdrop() }
                 scene.setMood(pet.mood())
@@ -137,11 +157,14 @@ struct ContentView: View {
                 }
                 scene.setSleeping(pet.isSleeping)
                 scene.setMood(pet.mood())
+                SoundPlayer.shared.play(pet.isSleeping ? .bedtime : .wakeup)
+                SoundPlayer.shared.playMusic(pet.isSleeping ? .night : .garden)
             }
             scene.onNameTapped = {
                 showingNamer = true
             }
             scene.setBunnyName(bunnyName)
+            SoundPlayer.shared.playMusic(pet.isSleeping ? .night : .garden)
             scene.setSleeping(pet.isSleeping)
             scene.setMood(pet.mood())
             scene.setStage(pet.stage)
@@ -171,6 +194,7 @@ struct ContentView: View {
     /// Looking after the bunny when it actually needs it earns a dewdrop.
     private func earnDewdrop() {
         inventory.earn()
+        SoundPlayer.shared.play(.dewdrop)
         scene.showDewdropEarned()
     }
 
@@ -178,6 +202,7 @@ struct ContentView: View {
         guard pet.stage != shownStage else { return }
         shownStage = pet.stage
         scene.setStage(pet.stage, celebrate: true)
+        SoundPlayer.shared.play(.grow)
     }
 }
 

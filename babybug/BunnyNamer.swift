@@ -113,6 +113,7 @@ struct BunnyNamer: View {
     private func finish() {
         guard !trimmed.isEmpty else { return }
         typing = false
+        SoundPlayer.shared.play(.dewdrop)
         onDone(trimmed)
     }
 }

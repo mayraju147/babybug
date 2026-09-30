@@ -342,6 +342,7 @@ final class GardenScene: SKScene {
             rubDistance = 0
             lastRubPoint = point
         } else if let heroNode, heroNode.frame.contains(point) {
+            SoundPlayer.shared.play(.tap)
             heroNode.run(.sequence([
                 .moveBy(x: 0, y: 18, duration: 0.15),
                 .moveBy(x: 0, y: -18, duration: 0.15),

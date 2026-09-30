@@ -59,6 +59,7 @@ struct HeroPicker: View {
 
     private func choose(_ hero: Hero) {
         guard chosen == nil else { return }
+        SoundPlayer.shared.play(.buy)
         withAnimation(.spring(response: 0.35, dampingFraction: 0.5)) {
             chosen = hero
         }

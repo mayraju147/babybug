@@ -230,10 +230,13 @@ private struct ShopCard: View {
     private func tap() {
         if isOwned {
             inventory.choose(item)
+            SoundPlayer.shared.play(.tap)
             pop()
         } else if inventory.buy(item) {
+            SoundPlayer.shared.play(.buy)
             pop()
         } else {
+            SoundPlayer.shared.play(.nope)
             // Not enough dewdrops yet: a little "no" wobble, then the offer of more.
             withAnimation(.linear(duration: 0.4)) { shakes += 1 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
