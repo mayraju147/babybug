@@ -637,7 +637,7 @@ final class GardenScene: SKScene {
 
     /// A small bird flutters across the sky.
     private func sendBird() {
-        let bird = Self.picture("Bird", emoji: "🐦", height: 40)
+        let bird = Self.picture("Bird", emoji: "🐦", height: 64)
         let edge = size.width / 2 + 40
         bird.position = CGPoint(x: edge, y: .random(in: 120...280))
         bird.zPosition = 2
