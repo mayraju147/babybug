@@ -32,7 +32,7 @@ Painted art made with Gemini from the project prompts: the garden background and
 
 - Outfits: the shop's Outfits corner sells a bunny hoodie (35), flower fairy (45; for the prince it's a bookworm outfit) and starry night (60) for the princess or prince. Tap an owned outfit to wear it, tap again to change back. Pictures are `PrincessBunnyHoodie`, `PrinceStarryNight`, and so on; until one is added, the everyday clothes show.
 
-- Butterflies: every so often a butterfly flutters across the garden (daytime only). Tap it to catch it for a dewdrop, up to 10 a day. Picture is `Butterfly`; a 🦋 stands in until it's added.
+- Butterflies: every so often a butterfly flutters across the garden (daytime only). Tap it to catch it for a dewdrop, up to 10 a day. The butterfly is painted (`Butterfly`).
 
 - Sound: a soft music-box waltz plays in the garden and a lullaby at night, with little sounds for tickles, munching, bubbles, dewdrops, growing up, buying and bedtime. All music and sounds are original, made for babybug. The speaker button under the crown turns sound off or on, and the phone's silent switch mutes it too.
 
