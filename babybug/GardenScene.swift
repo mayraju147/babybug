@@ -11,6 +11,8 @@ final class GardenScene: SKScene {
     var onBedtimeTapped: (() -> Void)?
     /// Called when the child taps the bunny's name tag, to rename it.
     var onNameTapped: (() -> Void)?
+    /// Called when the child catches a butterfly.
+    var onButterflyCaught: (() -> Void)?
 
     private let bunny = SKSpriteNode(imageNamed: "Bunny")
     private var carrot = SKNode()
@@ -38,6 +40,7 @@ final class GardenScene: SKScene {
     private var lastRubPoint = CGPoint.zero
     private var isSleeping = false
     private var night: SKNode?
+    private var butterfly: SKNode?
 
     override init(size: CGSize) {
         super.init(size: size)
@@ -61,6 +64,7 @@ final class GardenScene: SKScene {
             setHero(pendingHero.hero, outfit: pendingHero.outfit)
         }
         showMood(mood)
+        startButterflies()
     }
 
     /// Makes the bunny baby, young or grown. With `celebrate`, it pops up bigger with a shower of sparkles.
@@ -337,6 +341,8 @@ final class GardenScene: SKScene {
         guard let point = touches.first?.location(in: self) else { return }
         if isSleeping {
             onBedtimeTapped?()
+        } else if let butterfly, butterfly.calculateAccumulatedFrame().insetBy(dx: -22, dy: -22).contains(point) {
+            catchButterfly(butterfly)
         } else if let nameTag, nameTag.calculateAccumulatedFrame().insetBy(dx: -6, dy: -6).contains(point) {
             onNameTapped?()
         } else if carrot.calculateAccumulatedFrame().insetBy(dx: -12, dy: -12).contains(point) {
@@ -396,6 +402,103 @@ final class GardenScene: SKScene {
         touchesEnded(touches, with: event)
     }
 
+    // MARK: - Butterflies
+
+    /// Now and then, while the bunny is awake, a butterfly flutters across the garden.
+    private func startButterflies() {
+        run(.repeatForever(.sequence([
+            .wait(forDuration: 14, withRange: 12),
+            .run { [weak self] in self?.sendButterfly() },
+        ])), withKey: "butterflies")
+    }
+
+    private func sendButterfly() {
+        guard butterfly == nil, !isSleeping else { return }
+        let fromLeft = Bool.random()
+        let halfWidth = size.width / 2 + 40
+        let start = CGPoint(x: fromLeft ? -halfWidth : halfWidth, y: .random(in: -120...160))
+        let end = CGPoint(x: -start.x, y: .random(in: -120...200))
+
+        // A wavy, wandering path across the garden.
+        let path = CGMutablePath()
+        path.move(to: start)
+        var previous = start
+        let steps = 4
+        for i in 1...steps {
+            let t = CGFloat(i) / CGFloat(steps)
+            let point = CGPoint(x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t)
+            let lift: CGFloat = i.isMultiple(of: 2) ? -70 : 70
+            let control = CGPoint(x: (previous.x + point.x) / 2, y: (previous.y + point.y) / 2 + lift)
+            path.addQuadCurve(to: point, control: control)
+            previous = point
+        }
+
+        let holder = SKNode()
+        holder.position = start
+        holder.zPosition = 5
+        holder.xScale = fromLeft ? 1 : -1
+        let wings = Self.butterflyNode()
+        holder.addChild(wings)
+        addChild(holder)
+        butterfly = holder
+
+        // Wings flap by squashing sideways towards the body.
+        wings.run(.repeatForever(.sequence([
+            .scaleX(to: 0.35, duration: 0.14),
+            .scaleX(to: 1, duration: 0.14),
+        ])), withKey: "flap")
+        holder.run(.sequence([
+            .follow(path, asOffset: false, orientToPath: false, duration: 10),
+            .removeFromParent(),
+            .run { [weak self, weak holder] in
+                if self?.butterfly === holder { self?.butterfly = nil }
+            },
+        ]), withKey: "fly")
+    }
+
+    private static func butterflyNode() -> SKNode {
+        if let image = UIImage(named: "Butterfly") {
+            let sprite = SKSpriteNode(texture: SKTexture(image: image))
+            let height: CGFloat = 46
+            sprite.size = CGSize(width: height * image.size.width / image.size.height, height: height)
+            return sprite
+        }
+        let label = SKLabelNode(text: "🦋")
+        label.fontSize = 40
+        label.verticalAlignmentMode = .center
+        return label
+    }
+
+    private func catchButterfly(_ holder: SKNode) {
+        butterfly = nil
+        holder.removeAction(forKey: "fly")
+        onButterflyCaught?()
+        for _ in 0..<6 {
+            let sparkle = SKLabelNode(text: Bool.random() ? "✨" : "💖")
+            sparkle.fontSize = 18
+            sparkle.position = holder.position
+            sparkle.zPosition = 6
+            addChild(sparkle)
+            sparkle.run(.sequence([
+                .group([
+                    .moveBy(x: .random(in: -50...50), y: .random(in: 20...70), duration: 0.7),
+                    .fadeOut(withDuration: 0.7),
+                ]),
+                .removeFromParent(),
+            ]))
+        }
+        // A happy little loop, then away it flies.
+        holder.run(.sequence([
+            .scale(to: 1.4, duration: 0.15),
+            .scale(to: 1, duration: 0.15),
+            .group([
+                .moveBy(x: 0, y: 260, duration: 1.4),
+                .sequence([.wait(forDuration: 0.8), .fadeOut(withDuration: 0.6)]),
+            ]),
+            .removeFromParent(),
+        ]))
+    }
+
     // MARK: - Bedtime
 
     /// Dims the garden to a starry night while the bunny sleeps, and brings the day back when it wakes.
@@ -403,6 +506,10 @@ final class GardenScene: SKScene {
         guard sleeping != isSleeping else { return }
         isSleeping = sleeping
         if sleeping {
+            if let butterfly {
+                self.butterfly = nil
+                butterfly.run(.sequence([.fadeOut(withDuration: 0.5), .removeFromParent()]))
+            }
             let overlay = makeNight()
             overlay.alpha = 0
             addChild(overlay)

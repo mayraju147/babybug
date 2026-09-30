@@ -10,6 +10,9 @@ struct ContentView: View {
     @AppStorage("hero") private var heroChoice = ""
     @AppStorage("bunnyName") private var bunnyName = ""
     @AppStorage("soundOn") private var soundOn = true
+    /// Butterflies caught today, so a day's catch pays out a limited number of dewdrops.
+    @AppStorage("butterflyDay") private var butterflyDay = ""
+    @AppStorage("butterfliesToday") private var butterfliesToday = 0
     @State private var showingNamer = false
     @State private var showingPicker = false
     /// The stage the garden is showing, so a new one can be celebrated.
@@ -164,6 +167,9 @@ struct ContentView: View {
             scene.onNameTapped = {
                 showingNamer = true
             }
+            scene.onButterflyCaught = {
+                catchButterfly()
+            }
             scene.setBunnyName(bunnyName)
             SoundPlayer.shared.playMusic(pet.isSleeping ? .night : .garden)
             scene.setSleeping(pet.isSleeping)
@@ -189,6 +195,22 @@ struct ContentView: View {
                 scene.setMood(pet.mood())
                 try? await Task.sleep(for: .seconds(5))
             }
+        }
+    }
+
+    /// Each butterfly caught earns a dewdrop, up to 10 a day; after that they're just for fun.
+    private func catchButterfly() {
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+        let today = "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
+        if butterflyDay != today {
+            butterflyDay = today
+            butterfliesToday = 0
+        }
+        butterfliesToday += 1
+        if butterfliesToday <= 10 {
+            earnDewdrop()
+        } else {
+            SoundPlayer.shared.play(.tickle)
         }
     }
 
