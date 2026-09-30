@@ -21,6 +21,9 @@ struct ContentView: View {
     @AppStorage("butterfliesToday") private var butterfliesToday = 0
     @AppStorage("presentsDay") private var presentsDay = ""
     @AppStorage("presentsToday") private var presentsToday = 0
+    @AppStorage("gamesDay") private var gamesDay = ""
+    @AppStorage("gamesToday") private var gamesToday = 0
+    @State private var showingGame = false
     @AppStorage(Reminders.onKey) private var remindersOn = false
     @State private var showingReminders = false
     @Environment(\.scenePhase) private var scenePhase
@@ -167,6 +170,23 @@ struct ContentView: View {
                 .fullScreenCover(isPresented: $showingBook) {
                     GardenBook(progress: progress) { showingBook = false }
                 }
+                // Carrot Catch mini-game.
+                Button {
+                    showingGame = true
+                } label: {
+                    Text("🧺")
+                        .font(.system(size: 26))
+                        .frame(width: 56, height: 56)
+                        .background(Circle().fill(.white.opacity(0.9)))
+                        .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 3))
+                        .shadow(color: Y2K.bubblegum.opacity(0.35), radius: 6, y: 3)
+                }
+                .accessibilityLabel("Play Carrot Catch")
+                .fullScreenCover(isPresented: $showingGame) {
+                    CarrotCatchView(bunnyImage: gameBunnyImage, bunnyName: bunnyName, onRoundEnd: finishGame) {
+                        showingGame = false
+                    }
+                }
             }
             .padding(.leading, 12)
             .padding(.top, 66)
@@ -300,6 +320,28 @@ struct ContentView: View {
                 .background(Circle().fill(.white.opacity(0.9)))
                 .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2))
         }
+    }
+
+    /// The bunny picture for Carrot Catch: its happy pose for its age, if painted.
+    private var gameBunnyImage: String {
+        let happy = pet.stage.imagePrefix + "Happy"
+        return UIImage(named: happy) != nil ? happy : pet.stage.imagePrefix
+    }
+
+    /// A round of Carrot Catch pays a dewdrop for every 3 treats caught (at least 1, at most 10),
+    /// for the first 3 rounds each day. Returns the dewdrops earned.
+    private func finishGame(score: Int) -> Int {
+        let today = GardenProgress.dayString()
+        if gamesDay != today {
+            gamesDay = today
+            gamesToday = 0
+        }
+        gamesToday += 1
+        record(.game)
+        guard gamesToday <= 3 else { return 0 }
+        let reward = min(max(score / 3, 1), 10)
+        inventory.earn(reward)
+        return reward
     }
 
     /// A present hidden in the grass holds a few dewdrops, for the first 5 found each day.

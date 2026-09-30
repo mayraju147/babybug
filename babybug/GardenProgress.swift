@@ -2,7 +2,7 @@ import Foundation
 
 /// Things the child does in the garden that count towards quests and stickers.
 enum Activity: String, Codable, CaseIterable {
-    case feed, tickle, bathe, bedtime, butterfly, buy, present, splash
+    case feed, tickle, bathe, bedtime, butterfly, buy, present, splash, game
 }
 
 /// A small task for today, such as "Catch 3 butterflies". Three new ones each day.
@@ -21,6 +21,7 @@ struct Quest: Identifiable, Equatable {
         Quest(id: "bathe2", activity: .bathe, goal: 2, title: "Give 2 bubble baths", emoji: "🫧"),
         Quest(id: "butterfly3", activity: .butterfly, goal: 3, title: "Catch 3 butterflies", emoji: "🦋"),
         Quest(id: "butterfly5", activity: .butterfly, goal: 5, title: "Catch 5 butterflies", emoji: "🦋"),
+        Quest(id: "game1", activity: .game, goal: 1, title: "Play Carrot Catch", emoji: "🧺"),
         Quest(id: "bedtime1", activity: .bedtime, goal: 1, title: "Tuck your bunny into bed", emoji: "🌙"),
     ]
 
@@ -68,6 +69,7 @@ struct Sticker: Identifiable {
         Sticker(id: "butterflies", emoji: "🦋", title: "Butterfly friend", hint: "Catch 20 butterflies") { p, _ in p.count(.butterfly) >= 20 },
         Sticker(id: "presents", emoji: "🎁", title: "Lucky finder", hint: "Find 5 hidden presents") { p, _ in p.count(.present) >= 5 },
         Sticker(id: "splash", emoji: "☔️", title: "Splish splash", hint: "Splash in 10 puddles") { p, _ in p.count(.splash) >= 10 },
+        Sticker(id: "catcher", emoji: "🧺", title: "Carrot catcher", hint: "Play Carrot Catch 5 times") { p, _ in p.count(.game) >= 5 },
         Sticker(id: "shopper", emoji: "🧺", title: "Little shopper", hint: "Buy 3 things in the shop") { p, _ in p.count(.buy) >= 3 },
         Sticker(id: "dressup", emoji: "👗", title: "Dress up", hint: "Buy an outfit") { _, c in c.ownsOutfit },
         Sticker(id: "young", emoji: "🌱", title: "Growing up", hint: "Help your bunny grow") { _, c in c.stage.rawValue >= Stage.young.rawValue },
