@@ -4,6 +4,12 @@ import SwiftUI
 struct ContentView: View {
     @State private var pet = PetStats.load()
     @State private var inventory = Inventory.load()
+    @State private var progress = GardenProgress.load()
+    @State private var showingGift = false
+    @State private var showingBook = false
+    @State private var ownedBeforeShop = 0
+    /// Little "Quest done!" and "New sticker!" notes, shown one after another at the top.
+    @State private var banners: [String] = []
     @State private var store: DewdropStore?
     @State private var showingShop = false
     @State private var scene = GardenScene(size: CGSize(width: 390, height: 844))
@@ -32,6 +38,7 @@ struct ContentView: View {
                         bunnyName = name
                         scene.setBunnyName(name)
                         showingNamer = false
+                        welcome()
                     }
                 }
             // A few Y2K twinkles over the garden, soft enough not to hide the painting.
@@ -47,6 +54,22 @@ struct ContentView: View {
                     inventory.earn(50)
                     updateStage()
                 }
+            if let banner = banners.first {
+                Text(banner)
+                    .font(.whimsy(20))
+                    .foregroundStyle(Y2K.ink)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(.white.opacity(0.95)))
+                    .overlay(Capsule().strokeBorder(Y2K.holo, lineWidth: 3))
+                    .shadow(color: Y2K.bubblegum.opacity(0.35), radius: 8, y: 4)
+                    .padding(.top, 150)
+                    .padding(.horizontal, 24)
+                    .transition(.scale.combined(with: .opacity))
+                    .id(banner)
+                    .allowsHitTesting(false)
+            }
         }
         .overlay(alignment: .topTrailing) {
             VStack(spacing: 10) {
@@ -91,6 +114,7 @@ struct ContentView: View {
                 DewdropCounter(count: inventory.dewdrops)
                 // Big, easy-to-hit shop button for small fingers.
                 Button {
+                    ownedBeforeShop = inventory.owned.count
                     showingShop = true
                 } label: {
                     Image(systemName: "basket.fill")
@@ -103,6 +127,8 @@ struct ContentView: View {
                 }
                 .accessibilityLabel("Dewdrop shop")
                 .fullScreenCover(isPresented: $showingShop, onDismiss: {
+                    let bought = inventory.owned.count - ownedBeforeShop
+                    for _ in 0..<max(bought, 0) { record(.buy) }
                     scene.setTreat(inventory.treat)
                     scene.setDecorations(inventory.decorations)
                     if let hero { scene.setHero(hero, outfit: inventory.outfit) }
@@ -113,9 +139,47 @@ struct ContentView: View {
                         }
                     }
                 }
+                // Garden book: today's quests, the streak and the sticker album.
+                Button {
+                    showingBook = true
+                } label: {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(
+                            LinearGradient(colors: [Color(red: 1, green: 0.9, blue: 0.5), Color(red: 0.95, green: 0.65, blue: 0.3)],
+                                           startPoint: .top, endPoint: .bottom)
+                        )
+                        .frame(width: 56, height: 56)
+                        .background(Circle().fill(.white.opacity(0.9)))
+                        .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 3))
+                        .shadow(color: Y2K.bubblegum.opacity(0.35), radius: 6, y: 3)
+                        .overlay(alignment: .topTrailing) {
+                            // A pink dot while today's quests aren't all done.
+                            if progress.todaysQuests.contains(where: { !progress.isDone($0) }) {
+                                Circle().fill(Y2K.bubblegum).frame(width: 14, height: 14)
+                                    .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+                            }
+                        }
+                }
+                .accessibilityLabel("My garden book: quests and stickers")
+                .fullScreenCover(isPresented: $showingBook) {
+                    GardenBook(progress: progress) { showingBook = false }
+                }
             }
             .padding(.leading, 12)
             .padding(.top, 66)
+        }
+        .overlay {
+            // The daily gift box, above everything else in the garden.
+            if showingGift {
+                DailyGift(streak: progress.streak, dayOfWeek: progress.dayOfWeek, amount: progress.giftAmount) {
+                    inventory.earn(progress.openGift())
+                    checkStickers()
+                } onClose: {
+                    withAnimation { showingGift = false }
+                }
+                .transition(.opacity)
+            }
         }
         .fullScreenCover(isPresented: $showingPicker, onDismiss: {
             // First time through: name the bunny straight after choosing the princess or prince.
@@ -139,6 +203,7 @@ struct ContentView: View {
                 SoundPlayer.shared.play(.munch)
                 pet.feed(inventory.treat)
                 if needed { earnDewdrop() }
+                record(.feed)
                 scene.setMood(pet.mood())
                 updateStage()
             }
@@ -147,6 +212,7 @@ struct ContentView: View {
                 SoundPlayer.shared.play(.tickle)
                 pet.play()
                 if needed { earnDewdrop() }
+                record(.tickle)
                 scene.setMood(pet.mood())
                 updateStage()
             }
@@ -155,6 +221,7 @@ struct ContentView: View {
                 SoundPlayer.shared.play(.bubble)
                 pet.bathe()
                 if needed { earnDewdrop() }
+                record(.bathe)
                 scene.setMood(pet.mood())
                 updateStage()
             }
@@ -168,6 +235,7 @@ struct ContentView: View {
                 scene.setMood(pet.mood())
                 SoundPlayer.shared.play(pet.isSleeping ? .bedtime : .wakeup)
                 SoundPlayer.shared.playMusic(pet.isSleeping ? .night : .garden)
+                if pet.isSleeping { record(.bedtime) }
             }
             scene.onNameTapped = {
                 showingNamer = true
@@ -188,6 +256,8 @@ struct ContentView: View {
                 // Players from before names existed get asked once.
                 if bunnyName.isEmpty {
                     showingNamer = true
+                } else {
+                    welcome()
                 }
             } else {
                 showingPicker = true
@@ -199,6 +269,8 @@ struct ContentView: View {
                 Reminders.schedule(bunnyName: bunnyName)
             } else if phase == .active {
                 Reminders.cancel()
+                // Back after a night away: a new day's visit and gift.
+                if hero != nil, !bunnyName.isEmpty { welcome() }
             }
         }
         .task {
@@ -231,6 +303,7 @@ struct ContentView: View {
             butterfliesToday = 0
         }
         butterfliesToday += 1
+        record(.butterfly)
         if butterfliesToday <= 10 {
             earnDewdrop()
         } else {
@@ -250,6 +323,52 @@ struct ContentView: View {
         shownStage = pet.stage
         scene.setStage(pet.stage, celebrate: true)
         SoundPlayer.shared.play(.grow)
+        checkStickers()
+    }
+
+    // MARK: Streak, quests and stickers
+
+    /// Counts today's visit and offers the gift box if it's still waiting.
+    private func welcome() {
+        if progress.checkIn() {
+            withAnimation { showingGift = true }
+        }
+        checkStickers()
+    }
+
+    private func record(_ activity: Activity) {
+        let result = progress.record(activity)
+        for quest in result.finished {
+            inventory.earn(Quest.reward)
+            announce("⭐️ Quest done! \(quest.title) +\(Quest.reward)")
+        }
+        if result.allDone {
+            inventory.earn(Quest.allDoneBonus)
+            announce("🌟 All of today's quests! +\(Quest.allDoneBonus)")
+        }
+        checkStickers()
+    }
+
+    private func checkStickers() {
+        let context = StickerContext(stage: pet.stage, ownsOutfit: inventory.owned.contains { $0.kind == .outfit })
+        for sticker in progress.newStickers(context) {
+            announce("\(sticker.emoji) New sticker: \(sticker.title)!")
+        }
+    }
+
+    private func announce(_ text: String) {
+        let wasEmpty = banners.isEmpty
+        banners.append(text)
+        if wasEmpty { showNextBanner() }
+    }
+
+    private func showNextBanner() {
+        guard !banners.isEmpty else { return }
+        SoundPlayer.shared.play(.buy)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) {
+            withAnimation { _ = banners.removeFirst() }
+            showNextBanner()
+        }
     }
 }
 

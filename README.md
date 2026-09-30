@@ -36,6 +36,9 @@ Painted art made with Gemini from the project prompts: the garden background and
 
 - Reminders: the bell button (under the crown and speaker) opens a grown-up check, then a switch for "your bunny misses you" notifications. When on, leaving the app schedules a gentle reminder after 8 hours and one more a day later, never between 7pm and 9am; opening the app cancels them.
 
+- Daily gift and streak: the first visit each day brings a gift box of dewdrops. Visiting days in a row fills a 7-day week (5, 5, 10, 10, 15, 15, then 40 dewdrops on day 7). Missing a day only starts the week again; the bunny is never punished.
+- Garden book (the star button under the basket): today's three quests (such as "Catch 3 butterflies"), each worth a star and 5 dewdrops, plus 10 more for finishing all three; and a sticker album of 15 stickers earned for things like feeding the bunny 10 times, a 7-day streak or buying an outfit. A pink dot on the star means quests are waiting. Notes pop up at the top when a quest is done or a sticker is earned.
+
 - Sound: a soft music-box waltz plays in the garden and a lullaby at night, with little sounds for tickles, munching, bubbles, dewdrops, growing up, buying and bedtime. All music and sounds are original, made for babybug. The speaker button under the crown turns sound off or on, and the phone's silent switch mutes it too.
 
 ## Code map
@@ -51,6 +54,7 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/BunnyNamer.swift`: the naming screen
 - `babybug/SoundPlayer.swift`, `babybug/Sounds/`: music and sound effects
 - `babybug/Reminders.swift`, `babybug/RemindersView.swift`: "misses you" notifications and their grown-up settings
+- `babybug/GardenProgress.swift`, `babybug/DailyGift.swift`, `babybug/GardenBook.swift`: streak, daily gift, quests and stickers
 - `babybug/Stage.swift`: baby, young and grown, and when each one starts
 - `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince
 - `babybug/AppFont.swift`, `babybug/Fonts/`, `babybug-Info.plist` (lists the font so iOS loads it): the Yuji Mai font (by Kinuta Font Factory, free under the SIL Open Font License 1.1, from Google Fonts)
