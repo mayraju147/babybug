@@ -97,9 +97,10 @@ struct ContentView: View {
                 .fullScreenCover(isPresented: $showingShop, onDismiss: {
                     scene.setTreat(inventory.treat)
                     scene.setDecorations(inventory.decorations)
+                    if let hero { scene.setHero(hero, outfit: inventory.outfit) }
                 }) {
                     if let store {
-                        ShopView(inventory: inventory, store: store) {
+                        ShopView(inventory: inventory, store: store, hero: hero) {
                             showingShop = false
                         }
                     }
@@ -116,7 +117,7 @@ struct ContentView: View {
         }) {
             HeroPicker { chosen in
                 heroChoice = chosen.rawValue
-                scene.setHero(chosen)
+                scene.setHero(chosen, outfit: inventory.outfit)
                 showingPicker = false
             }
         }
@@ -172,7 +173,7 @@ struct ContentView: View {
             scene.setDecorations(inventory.decorations)
             shownStage = pet.stage
             if let hero {
-                scene.setHero(hero)
+                scene.setHero(hero, outfit: inventory.outfit)
                 // Players from before names existed get asked once.
                 if bunnyName.isEmpty {
                     showingNamer = true

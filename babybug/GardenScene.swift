@@ -22,7 +22,7 @@ final class GardenScene: SKScene {
     private var bunnyName = ""
     private var nameTag: SKNode?
     private var heroNode: SKSpriteNode?
-    private var pendingHero: Hero?
+    private var pendingHero: (hero: Hero, outfit: ShopItem?)?
     private var isBuilt = false
     private var mood: Mood = .content
     private var thoughtBubble: SKNode?
@@ -58,7 +58,7 @@ final class GardenScene: SKScene {
         showDecorations()
         showNameTag()
         if let pendingHero {
-            setHero(pendingHero)
+            setHero(pendingHero.hero, outfit: pendingHero.outfit)
         }
         showMood(mood)
     }
@@ -153,13 +153,18 @@ final class GardenScene: SKScene {
     }
 
     /// Shows the chosen princess or prince standing beside the bunny, replacing any earlier choice.
-    func setHero(_ hero: Hero) {
+    /// An outfit shows once its painted picture is in the asset catalog; until then, the everyday clothes.
+    func setHero(_ hero: Hero, outfit: ShopItem? = nil) {
         guard isBuilt else {
-            pendingHero = hero
+            pendingHero = (hero, outfit)
             return
         }
         heroNode?.removeFromParent()
-        let node = SKSpriteNode(imageNamed: hero.imageName)
+        var imageName = hero.imageName
+        if let outfit, UIImage(named: outfit.outfitImage(for: hero)) != nil {
+            imageName = outfit.outfitImage(for: hero)
+        }
+        let node = SKSpriteNode(imageNamed: imageName)
         node.anchorPoint = CGPoint(x: 0.5, y: 0)
         let height: CGFloat = 300
         let texture = node.texture!.size()

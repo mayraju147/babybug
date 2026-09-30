@@ -30,6 +30,8 @@ Painted art made with Gemini from the project prompts: the garden background and
   - To test in the simulator: Product > Scheme > Edit Scheme > Run > Options > StoreKit Configuration > `Babybug.storekit` (it's in the babybug folder).
   - For the real App Store: create three consumable in-app purchases in App Store Connect with IDs `com.mayraju147.babybug.dewdrops1000`, `...dewdrops3500`, `...dewdrops8500`.
 
+- Outfits: the shop's Outfits corner sells a bunny hoodie (35), flower fairy (45) and starry night (60) for the princess or prince. Tap an owned outfit to wear it, tap again to change back. Pictures are `PrincessBunnyHoodie`, `PrinceStarryNight`, and so on; until one is added, the everyday clothes show.
+
 - Sound: a soft music-box waltz plays in the garden and a lullaby at night, with little sounds for tickles, munching, bubbles, dewdrops, growing up, buying and bedtime. All music and sounds are original, made for babybug. The speaker button under the crown turns sound off or on, and the phone's silent switch mutes it too.
 
 ## Code map

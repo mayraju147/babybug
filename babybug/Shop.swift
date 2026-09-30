@@ -7,8 +7,10 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
     case carrot, strawberry, clover, cupcake
     // Garden decorations
     case flowerPot, lantern, mushroom
+    // Outfits for the princess or prince
+    case bunnyHoodie, flowerFairy, starryNight
 
-    enum Kind { case treat, decoration }
+    enum Kind { case treat, decoration, outfit }
 
     var id: String { rawValue }
 
@@ -16,6 +18,7 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .carrot, .strawberry, .clover, .cupcake: .treat
         case .flowerPot, .lantern, .mushroom: .decoration
+        case .bunnyHoodie, .flowerFairy, .starryNight: .outfit
         }
     }
 
@@ -28,6 +31,9 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
         case .flowerPot: "Flower pot"
         case .lantern: "Lantern"
         case .mushroom: "Mushroom"
+        case .bunnyHoodie: "Bunny hoodie"
+        case .flowerFairy: "Flower fairy"
+        case .starryNight: "Starry night"
         }
     }
 
@@ -41,10 +47,14 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
         case .flowerPot: 20
         case .lantern: 30
         case .mushroom: 40
+        case .bunnyHoodie: 35
+        case .flowerFairy: 45
+        case .starryNight: 60
         }
     }
 
     /// Painted picture in the asset catalog. Until it's added, `emoji` stands in.
+    /// Outfits have one picture per hero instead: see `outfitImage(for:)`.
     var imageName: String {
         switch self {
         case .carrot: "Carrot"
@@ -54,7 +64,15 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
         case .flowerPot: "DecorFlowerPot"
         case .lantern: "DecorLantern"
         case .mushroom: "DecorMushroom"
+        case .bunnyHoodie: "OutfitBunnyHoodie"
+        case .flowerFairy: "OutfitFlowerFairy"
+        case .starryNight: "OutfitStarryNight"
         }
+    }
+
+    /// The princess or prince wearing this outfit, for example "PrincessBunnyHoodie".
+    func outfitImage(for hero: Hero) -> String {
+        hero.imageName + imageName.replacingOccurrences(of: "Outfit", with: "")
     }
 
     var emoji: String {
@@ -66,6 +84,9 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
         case .flowerPot: "🪴"
         case .lantern: "🏮"
         case .mushroom: "🍄"
+        case .bunnyHoodie: "🐰"
+        case .flowerFairy: "🌸"
+        case .starryNight: "⭐️"
         }
     }
 
@@ -76,7 +97,7 @@ enum ShopItem: String, CaseIterable, Identifiable, Codable {
         case .strawberry: (0.3, 0.05)
         case .clover: (0.35, 0.05)
         case .cupcake: (0.4, 0.15)
-        case .flowerPot, .lantern, .mushroom: (0, 0)
+        case .flowerPot, .lantern, .mushroom, .bunnyHoodie, .flowerFairy, .starryNight: (0, 0)
         }
     }
 
@@ -108,6 +129,8 @@ final class Inventory: Codable {
     var owned: Set<ShopItem> = [.carrot]
     /// The treat that sits in the garden, ready to drag to the bunny.
     var treat: ShopItem = .carrot
+    /// The outfit the princess or prince is wearing, or nil for their everyday clothes.
+    var outfit: ShopItem?
 
     private static let saveKey = "babybug.inventory"
 
@@ -128,14 +151,21 @@ final class Inventory: Codable {
         owned.insert(item)
         if item.kind == .treat {
             treat = item
+        } else if item.kind == .outfit {
+            outfit = item
         }
         save()
         return true
     }
 
+    /// Puts out an owned treat, or puts on an owned outfit (tapping the outfit being worn takes it off).
     func choose(_ item: ShopItem) {
-        guard item.kind == .treat, owned.contains(item) else { return }
-        treat = item
+        guard owned.contains(item) else { return }
+        switch item.kind {
+        case .treat: treat = item
+        case .outfit: outfit = outfit == item ? nil : item
+        case .decoration: return
+        }
         save()
     }
 
@@ -154,7 +184,7 @@ final class Inventory: Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case dewdrops, owned, treat
+        case dewdrops, owned, treat, outfit
     }
 
     init() {}
@@ -164,6 +194,7 @@ final class Inventory: Codable {
         dewdrops = try container.decode(Int.self, forKey: .dewdrops)
         owned = try container.decode(Set<ShopItem>.self, forKey: .owned)
         treat = try container.decode(ShopItem.self, forKey: .treat)
+        outfit = try container.decodeIfPresent(ShopItem.self, forKey: .outfit)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -171,5 +202,6 @@ final class Inventory: Codable {
         try container.encode(dewdrops, forKey: .dewdrops)
         try container.encode(owned, forKey: .owned)
         try container.encode(treat, forKey: .treat)
+        try container.encodeIfPresent(outfit, forKey: .outfit)
     }
 }

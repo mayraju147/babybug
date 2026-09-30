@@ -5,6 +5,8 @@ import SwiftUI
 struct ShopView: View {
     let inventory: Inventory
     let store: DewdropStore
+    /// Who wears the outfits. Before a hero is picked, the princess models them.
+    var hero: Hero?
     let onClose: () -> Void
 
     @State private var showingMore = false
@@ -57,6 +59,7 @@ struct ShopView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         section("Treats", kind: .treat)
                         section("Garden", kind: .decoration)
+                        section("Outfits", kind: .outfit)
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 30)
@@ -76,7 +79,7 @@ struct ShopView: View {
                 .padding(.leading, 6)
             LazyVGrid(columns: columns, spacing: 14) {
                 ForEach(ShopItem.allCases.filter { $0.kind == kind }) { item in
-                    ShopCard(item: item, inventory: inventory) {
+                    ShopCard(item: item, inventory: inventory, hero: hero ?? .princess) {
                         showingMore = true
                     }
                 }
@@ -130,6 +133,7 @@ struct DewdropIcon: View {
 private struct ShopCard: View {
     let item: ShopItem
     let inventory: Inventory
+    let hero: Hero
     /// Called when the child taps something they can't afford yet.
     let onNeedMore: () -> Void
 
@@ -137,7 +141,13 @@ private struct ShopCard: View {
     @State private var bounce = false
 
     private var isOwned: Bool { inventory.owned.contains(item) }
-    private var isChosen: Bool { item.kind == .treat && inventory.treat == item }
+    private var isChosen: Bool {
+        switch item.kind {
+        case .treat: inventory.treat == item
+        case .outfit: inventory.outfit == item
+        case .decoration: false
+        }
+    }
     private var canAfford: Bool { inventory.dewdrops >= item.price }
 
     var body: some View {
@@ -178,7 +188,9 @@ private struct ShopCard: View {
 
     @ViewBuilder
     private var picture: some View {
-        if UIImage(named: item.imageName) != nil {
+        if item.kind == .outfit {
+            outfitPicture
+        } else if UIImage(named: item.imageName) != nil {
             Image(item.imageName)
                 .resizable()
                 .scaledToFit()
@@ -188,10 +200,32 @@ private struct ShopCard: View {
         }
     }
 
+    /// The hero dressed up, or in everyday clothes with the outfit's emoji until the painting is added.
+    @ViewBuilder
+    private var outfitPicture: some View {
+        let dressed = item.outfitImage(for: hero)
+        if UIImage(named: dressed) != nil {
+            Image(dressed)
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image(hero.imageName)
+                .resizable()
+                .scaledToFit()
+                .overlay(alignment: .bottomTrailing) {
+                    Text(item.emoji).font(.system(size: 30))
+                }
+        }
+    }
+
     @ViewBuilder
     private var footer: some View {
-        if isChosen {
+        if isChosen && item.kind == .outfit {
+            label(Image(systemName: "checkmark"), "Wearing")
+        } else if isChosen {
             label(Image(systemName: "checkmark"), "Chosen")
+        } else if isOwned && item.kind == .outfit {
+            label(Image(systemName: "tshirt.fill"), "Wear")
         } else if isOwned && item.kind == .treat {
             label(Image(systemName: "hand.tap.fill"), "Use")
         } else if isOwned {
@@ -222,6 +256,7 @@ private struct ShopCard: View {
     }
 
     private var accessibilityText: String {
+        if isChosen && item.kind == .outfit { return "\(item.title), wearing. Tap to take it off" }
         if isChosen { return "\(item.title), chosen" }
         if isOwned { return item.title }
         return "\(item.title), \(item.price) dewdrops"
@@ -270,5 +305,5 @@ private struct Shake: GeometryEffect {
 
 #Preview {
     let inventory = Inventory()
-    ShopView(inventory: inventory, store: DewdropStore(inventory: inventory)) {}
+    ShopView(inventory: inventory, store: DewdropStore(inventory: inventory), hero: .princess) {}
 }
