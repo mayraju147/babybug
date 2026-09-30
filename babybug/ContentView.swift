@@ -13,6 +13,9 @@ struct ContentView: View {
     /// Butterflies caught today, so a day's catch pays out a limited number of dewdrops.
     @AppStorage("butterflyDay") private var butterflyDay = ""
     @AppStorage("butterfliesToday") private var butterfliesToday = 0
+    @AppStorage(Reminders.onKey) private var remindersOn = false
+    @State private var showingReminders = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingNamer = false
     @State private var showingPicker = false
     /// The stage the garden is showing, so a new one can be celebrated.
@@ -46,37 +49,39 @@ struct ContentView: View {
                 }
         }
         .overlay(alignment: .topTrailing) {
-            // Small crown button so a grown-up can switch between princess and prince later.
-            Button {
-                showingPicker = true
-            } label: {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(
-                        LinearGradient(colors: [Color(red: 1, green: 0.9, blue: 0.5), Color(red: 0.93, green: 0.68, blue: 0.2)],
-                                       startPoint: .top, endPoint: .bottom)
-                    )
-                    .frame(width: 46, height: 46)
-                    .background(Circle().fill(.white.opacity(0.9)))
-                    .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2.5))
-                    .shadow(color: Y2K.bubblegum.opacity(0.3), radius: 5, y: 2)
-            }
-            .accessibilityLabel("Change princess or prince")
-            .overlay(alignment: .bottom) {
-                // Sound on or off, for grown-ups (and quiet times).
+            VStack(spacing: 10) {
+                // Small crown button so a grown-up can switch between princess and prince later.
                 Button {
+                    showingPicker = true
+                } label: {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(
+                            LinearGradient(colors: [Color(red: 1, green: 0.9, blue: 0.5), Color(red: 0.93, green: 0.68, blue: 0.2)],
+                                           startPoint: .top, endPoint: .bottom)
+                        )
+                        .frame(width: 46, height: 46)
+                        .background(Circle().fill(.white.opacity(0.9)))
+                        .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2.5))
+                        .shadow(color: Y2K.bubblegum.opacity(0.3), radius: 5, y: 2)
+                }
+                .accessibilityLabel("Change princess or prince")
+
+                // Sound on or off, for grown-ups (and quiet times).
+                smallButton(soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill") {
                     soundOn.toggle()
                     SoundPlayer.shared.isOn = soundOn
-                } label: {
-                    Image(systemName: soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(Y2K.ink)
-                        .frame(width: 40, height: 40)
-                        .background(Circle().fill(.white.opacity(0.9)))
-                        .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2))
                 }
-                .offset(y: 50)
                 .accessibilityLabel(soundOn ? "Turn sound off" : "Turn sound on")
+
+                // Reminders, behind the grown-up check.
+                smallButton(remindersOn ? "bell.fill" : "bell.slash.fill") {
+                    showingReminders = true
+                }
+                .accessibilityLabel("Reminders for grown-ups")
+                .sheet(isPresented: $showingReminders) {
+                    RemindersView(bunnyName: bunnyName) { showingReminders = false }
+                }
             }
             .padding(.trailing, 12)
             .padding(.top, 60)
@@ -188,6 +193,14 @@ struct ContentView: View {
                 showingPicker = true
             }
         }
+        .onChange(of: scenePhase) { _, phase in
+            // Leaving the garden: ask the bunny to send a "miss you" later. Coming back: cancel it.
+            if phase == .background {
+                Reminders.schedule(bunnyName: bunnyName)
+            } else if phase == .active {
+                Reminders.cancel()
+            }
+        }
         .task {
             // Refresh the bars every few seconds so hunger and happiness drift down in real time.
             while !Task.isCancelled {
@@ -195,6 +208,17 @@ struct ContentView: View {
                 scene.setMood(pet.mood())
                 try? await Task.sleep(for: .seconds(5))
             }
+        }
+    }
+
+    private func smallButton(_ icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(Y2K.ink)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(.white.opacity(0.9)))
+                .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 2))
         }
     }
 

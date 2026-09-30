@@ -34,6 +34,8 @@ Painted art made with Gemini from the project prompts: the garden background and
 
 - Butterflies: every so often a butterfly flutters across the garden (daytime only). Tap it to catch it for a dewdrop, up to 10 a day. The butterfly is painted (`Butterfly`).
 
+- Reminders: the bell button (under the crown and speaker) opens a grown-up check, then a switch for "your bunny misses you" notifications. When on, leaving the app schedules a gentle reminder after 8 hours and one more a day later, never between 7pm and 9am; opening the app cancels them.
+
 - Sound: a soft music-box waltz plays in the garden and a lullaby at night, with little sounds for tickles, munching, bubbles, dewdrops, growing up, buying and bedtime. All music and sounds are original, made for babybug. The speaker button under the crown turns sound off or on, and the phone's silent switch mutes it too.
 
 ## Code map
@@ -48,6 +50,7 @@ Painted art made with Gemini from the project prompts: the garden background and
 - `babybug/Y2KStyle.swift`: shared Y2K look (stripes, sparkles, holographic rims)
 - `babybug/BunnyNamer.swift`: the naming screen
 - `babybug/SoundPlayer.swift`, `babybug/Sounds/`: music and sound effects
+- `babybug/Reminders.swift`, `babybug/RemindersView.swift`: "misses you" notifications and their grown-up settings
 - `babybug/Stage.swift`: baby, young and grown, and when each one starts
 - `babybug/Hero.swift`, `babybug/HeroPicker.swift`: choosing the princess or prince
 - `babybug/AppFont.swift`, `babybug/Fonts/`, `babybug-Info.plist` (lists the font so iOS loads it): the Yuji Mai font (by Kinuta Font Factory, free under the SIL Open Font License 1.1, from Google Fonts)
