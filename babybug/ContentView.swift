@@ -24,6 +24,7 @@ struct ContentView: View {
     @AppStorage("gamesDay") private var gamesDay = ""
     @AppStorage("gamesToday") private var gamesToday = 0
     @State private var showingGame = false
+    @State private var showingPlaces = false
     @AppStorage(Reminders.onKey) private var remindersOn = false
     @State private var showingReminders = false
     @Environment(\.scenePhase) private var scenePhase
@@ -109,6 +110,27 @@ struct ContentView: View {
                 .accessibilityLabel("Reminders for grown-ups")
                 .sheet(isPresented: $showingReminders) {
                     RemindersView(bunnyName: bunnyName) { showingReminders = false }
+                }
+
+                // Visit other places with the bunny.
+                Button {
+                    SoundPlayer.shared.play(.tap)
+                    showingPlaces = true
+                } label: {
+                    Image(systemName: "map.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Y2K.bubblegum)
+                        .frame(width: 56, height: 56)
+                        .background(Circle().fill(.white.opacity(0.9)))
+                        .overlay(Circle().strokeBorder(Y2K.holo, lineWidth: 3))
+                        .shadow(color: Y2K.bubblegum.opacity(0.35), radius: 6, y: 3)
+                }
+                .padding(.top, 6)
+                .accessibilityLabel("Visit other places")
+                .fullScreenCover(isPresented: $showingPlaces) {
+                    PlacesView(bunnyImage: gameBunnyImage, bunnyName: bunnyName, onExplored: explored) {
+                        showingPlaces = false
+                    }
                 }
             }
             .padding(.trailing, 12)
@@ -342,6 +364,17 @@ struct ContentView: View {
         let reward = min(max(score / 3, 1), 10)
         inventory.earn(reward)
         return reward
+    }
+
+    /// Finding everything at a place pays 10 dewdrops, once a day for each place. Returns the dewdrops earned.
+    private func explored(_ place: Place) -> Int {
+        if let activity = Activity(rawValue: place.rawValue) { record(activity) }
+        let key = "explored-\(place.rawValue)"
+        let today = GardenProgress.dayString()
+        guard UserDefaults.standard.string(forKey: key) != today else { return 0 }
+        UserDefaults.standard.set(today, forKey: key)
+        inventory.earn(10)
+        return 10
     }
 
     /// A present hidden in the grass holds a few dewdrops, for the first 5 found each day.
